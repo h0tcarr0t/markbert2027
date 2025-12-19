@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Two Column Layout</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Left Column: Fixed Spline Model -->
+    <div class="left-column">
+        <spline-viewer url="https://prod.spline.design/lOX2x8duNf5OfECq/scene.splinecode"></spline-viewer>    </div>
+
+    <!-- Right Column: Scrollable Content -->
+    <div class="right-column">
+        <div class="section section-1">
+            <h1>save the date</h1>
+            <p>Because Mark & Rob are getting married ;)</p>
+        </div>
+
+        <div class="section section-2">
+            <h1>01.02.2027</h1>
+            <p>at the</p>
+            <h1 class="no-dot">BRICK YARD 33</h1>
+            <h1 class="no-dot">美軍俱樂部</h1>
+            <p>Taipei, Taiwan</p>
+        </div>
+
+        <div class="section section-3">
+            <h1>RSVP</h1>
+            <p>Your invitation includes you and a plus-one</p>
+            <div id="rsvp-widget"></div>
+        </div>
+
+        <div class="section section-4">
+            <h1>TRAVEL & HOTELS</h1>
+            <p>As this is a destination wedding in Taiwan during new years, we recommend booking your hotel and flights early. Here are some recommendations:</p>
+        </div>
+
+        <div class="section section-5">
+            <h2>Section Five</h2>
+            <p>Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit.</p>
+            <p>Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit.</p>
+            <div class="placeholder-image">Image Placeholder</div>
+        </div>
+    </div>
+
+    <!-- Spline Viewer Script -->
+    <script type="module" src="https://unpkg.com/@splinetool/viewer@1.12.18/build/spline-viewer.js"></script>
+
+    <!-- Forward scroll events from left column to right column (custom smooth scroll) -->
+    <script>
+        const leftColumn = document.querySelector('.left-column');
+        const rightColumn = document.querySelector('.right-column');
+
+        let isScrolling = false;
+        let targetScroll = 0;
+
+        // Custom smooth scroll with adjustable settings
+        const scrollSettings = {
+            speed: 0.08,      // How fast it catches up (0.01 = very slow, 0.2 = fast)
+            multiplier: 1     // How much to scroll per wheel tick
+        };
+
+        function smoothScroll() {
+            if (!isScrolling) return;
+
+            const currentScroll = rightColumn.scrollTop;
+            const diff = targetScroll - currentScroll;
+
+            // Stop if we're close enough
+            if (Math.abs(diff) < 0.5) {
+                rightColumn.scrollTop = targetScroll;
+                isScrolling = false;
+                return;
+            }
+
+            // Ease toward target
+            rightColumn.scrollTop += diff * scrollSettings.speed;
+            requestAnimationFrame(smoothScroll);
+        }
+
+        // Left column scroll - use custom smooth scroll
+        leftColumn.addEventListener('wheel', (e) => {
+            e.preventDefault();
+
+            // Update target scroll position
+            targetScroll = Math.max(
+                0,
+                Math.min(
+                    rightColumn.scrollHeight - rightColumn.clientHeight,
+                    targetScroll + (e.deltaY * scrollSettings.multiplier)
+                )
+            );
+
+            // Start animation if not already running
+            if (!isScrolling) {
+                isScrolling = true;
+                targetScroll = rightColumn.scrollTop + (e.deltaY * scrollSettings.multiplier);
+                smoothScroll();
+            }
+        }, { passive: false });
+
+        // Right column scroll - sync target to prevent bounce back
+        rightColumn.addEventListener('wheel', () => {
+            // Stop any ongoing animation and sync target to current position
+            isScrolling = false;
+            targetScroll = rightColumn.scrollTop;
+        });
+
+        // Also sync on direct scroll (touch, scrollbar drag, etc.)
+        rightColumn.addEventListener('scroll', () => {
+            if (!isScrolling) {
+                targetScroll = rightColumn.scrollTop;
+            }
+        });
+    </script>
+    <script>
+        (function (w, d, s, o, f, js, fjs) {
+          w[o] = w[o] || function () { (w[o].q = w[o].q || []).push(arguments) };
+          js = d.createElement(s), fjs = d.getElementsByTagName(s)[0];
+          js.id = o; js.src = f; js.async = 1; fjs.parentNode.insertBefore(js, fjs);
+        }(window, document, 'script', 'oursvp', 'https://www.oursvp.app/widget/widget.js'));
+        oursvp('init', { 
+          element: document.getElementById('rsvp-widget'),
+          eventId: '7ve6uq43AknI0wLathOd',
+          showBackBtn: false,
+          language: 'english'
+        }); 
+        // rsvp styling 
+        document.body.style.setProperty('--bg-color', '#e3f2fd');
+        document.body.style.setProperty('--heading-color', '#00000080');
+        document.body.style.setProperty('--text-color', '#00000080');
+
+      </script>
+</body>
+</html>

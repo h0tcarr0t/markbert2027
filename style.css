@@ -1,0 +1,280 @@
+@font-face {
+    font-family: 'Lulo Clean';
+    src: url('fonts/Lulo Clean W01 One Bold.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Museo Slab';
+    src: url('fonts/Museo Slab 300.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: system-ui, -apple-system, sans-serif;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Left Column - Fixed Spline Model */
+.left-column {
+    width: 50%;
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    background: #f5f5f5;
+    overflow: hidden;
+}
+
+spline-viewer {
+    width: 100%;
+    height: 100%;
+}
+
+/* Right Column - Scrollable Content */
+.right-column {
+    width: 50%;
+    margin-left: 50%;
+    height: 100vh;
+    overflow-y: auto;
+    background: #ffffff;
+    /*scroll-snap-type: y mandatory;*/
+}
+
+.section {
+    padding: 80px 60px 80px 80px;
+    min-height: 100vh;
+    border-bottom: 1px solid #eee;
+    /*scroll-snap-align: start;*/
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+/* Vertical connecting line */
+.section::before {
+    content: '';
+    position: absolute;
+    left: 30px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: repeating-linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0.15) 0px,
+        rgba(0, 0, 0, 0.15) 3px,
+        transparent 3px,
+        transparent 10px
+    );
+}
+
+/* Dot next to title */
+.section h1,
+.section h2 {
+    position: relative;
+}
+
+.section h1::before,
+.section h2::before {
+    content: '';
+    position: absolute;
+    left: -60px;
+    top: 55%;
+    transform: translateY(-50%);
+    width: 17px;
+    height: 17px;
+    background: #ffffff;
+    border-radius: 50%;
+    border: 3px solid rgb(0, 0, 0, 0.2);
+}
+
+.no-dot::before {
+    display: none !important;
+}
+
+/* Custom colors for each section */
+.section-1 { background: #fce4ec; } /* Light pink */
+.section-2 { background: #e8f5e9; } /* Light green */
+.section-3 { background: #e3f2fd; } /* Light blue */
+.section-4 { background: #fff8e1; } /* Light yellow */
+.section-5 { background: #f5f0e5; } /* Light orange */
+
+h1 {
+    font-family: 'Lulo Clean', system-ui, sans-serif;
+    font-size: 3rem;
+    font-weight: normal;
+    margin-bottom: 1.2rem;
+    color: #00000080;
+}
+
+h2 {
+    font-family: 'Lulo Clean', system-ui, sans-serif;
+    font-size: 2rem;
+    font-weight: normal;
+    margin-bottom: 1rem;
+    color: #00000080;
+}
+
+p {
+    font-family: 'Museo Slab', Georgia, serif;
+    font-size: 1.5rem;
+    line-height: 1.8;
+    color: #00000080;
+    max-width: 700px;
+    margin-bottom: 1.5rem;
+}
+
+.placeholder-image {
+    width: 100%;
+    max-width: 400px;
+    height: 250px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    margin: 2rem 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1rem;
+}
+
+#rsvp-widget {
+    width: 100%;
+    max-width: 500px;
+    margin-top: 2rem;
+}
+
+/* RSVP Widget Styling */
+.rsvp-font {
+    font-family: 'Museo Slab', Georgia, serif;
+}
+
+.rsvp-title {
+    font-family: 'Lulo Clean', system-ui, sans-serif;
+    font-size: 1.5rem;
+    color: #333;
+}
+
+.rsvp-survey {
+    background: transparent;
+}
+
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+    body {
+        flex-direction: column;
+        height: auto;
+        overflow: auto;
+    }
+
+    /* Spline Model - Fixed at top on mobile */
+    .left-column {
+        width: 100%;
+        height: 40vh;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 10;
+    }
+
+    /* Content - Scrolls below the model */
+    .right-column {
+        width: 100%;
+        margin-left: 0;
+        margin-top: 40vh;
+        height: auto;
+        min-height: 60vh;
+        overflow: visible;
+        scroll-snap-type: none;
+    }
+
+    .section {
+        padding: 60px 24px 60px 50px;
+        min-height: auto;
+        scroll-snap-align: none;
+    }
+
+    .section::before {
+        left: 20px;
+    }
+
+    .section:first-child::before {
+        top: 80px;
+    }
+
+    .section:last-child::before {
+        bottom: calc(100% - 70px);
+    }
+
+    .section h1::before,
+    .section h2::before {
+        left: -39px;
+        width: 15px;
+        height: 15px;
+    }
+
+    h1 {
+        font-size: 2.2rem;
+    }
+
+    h2 {
+        font-size: 1.6rem;
+    }
+
+    p {
+        font-size: 1rem;
+    }
+
+    .placeholder-image {
+        max-width: 100%;
+        height: 200px;
+    }
+}
+
+/* Smaller phones */
+@media (max-width: 480px) {
+    .left-column {
+        height: 35vh;
+    }
+
+    .right-column {
+        margin-top: 35vh;
+    }
+
+    .section {
+        padding: 40px 20px 40px 45px;
+    }
+
+    .section::before {
+        left: 16px;
+    }
+
+    .section h1::before,
+    .section h2::before {
+        left: -34px;
+        width: 10px;
+        height: 10px;
+    }
+
+    h1 {
+        font-size: 1.8rem;
+    }
+
+    h2 {
+        font-size: 1.4rem;
+    }
+}
+
