@@ -41,6 +41,16 @@ spline-viewer {
     height: 100%;
 }
 
+/* Desktop Spline - visible by default */
+.spline-desktop {
+    display: block;
+}
+
+/* Mobile Spline - hidden by default */
+.spline-mobile {
+    display: none;
+}
+
 /* Right Column - Scrollable Content */
 .right-column {
     width: 50%;
@@ -180,25 +190,35 @@ p {
         overflow: auto;
     }
 
-    /* Spline Model - Fixed at top on mobile */
+    /* Swap Spline models */
+    .spline-desktop {
+        display: none;
+    }
+    .spline-mobile {
+        display: block;
+    }
+
+    /* Spline Model - Full screen fixed background on mobile */
     .left-column {
         width: 100%;
-        height: 40vh;
+        height: 100vh;
         position: fixed;
         top: 0;
         left: 0;
-        z-index: 10;
+        z-index: 0;
     }
 
-    /* Content - Scrolls below the model */
+    /* Content - Scrolls OVER the spline model */
     .right-column {
         width: 100%;
         margin-left: 0;
-        margin-top: 40vh;
+        margin-top: 100vh; /* ADJUSTABLE: Increase to push sections further down (e.g. 120vh, 150vh) */
         height: auto;
-        min-height: 60vh;
+        min-height: 100vh;
         overflow: visible;
         scroll-snap-type: none;
+        position: relative;
+        z-index: 1;
     }
 
     .section {
@@ -246,13 +266,7 @@ p {
 
 /* Smaller phones */
 @media (max-width: 480px) {
-    .left-column {
-        height: 35vh;
-    }
-
-    .right-column {
-        margin-top: 35vh;
-    }
+    /* left-column and right-column keep 100vh from 768px breakpoint */
 
     .section {
         padding: 40px 20px 40px 45px;
