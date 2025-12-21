@@ -212,7 +212,7 @@ p {
     .right-column {
         width: 100%;
         margin-left: 0;
-        margin-top: 200vh; /* ADJUSTABLE: Increase to push sections further down (e.g. 120vh, 150vh) */
+        margin-top: 1000vh; /* ADJUSTABLE: Increase to push sections further down (e.g. 120vh, 150vh) */
         height: auto;
         min-height: 100vh;
         overflow: visible;
