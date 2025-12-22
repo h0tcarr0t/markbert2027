@@ -205,7 +205,7 @@ p {
 
     .section {
         padding: 60px 24px 60px 50px;
-        min-height: auto;
+        min-height: 80vh;
         scroll-snap-align: none;
     }
 
