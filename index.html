@@ -28,26 +28,26 @@
     <div class="right-column">
         <div class="section section-1">
             <h1>SAVE THE DATE</h1>
-            <p>Because Mark & Rob are getting married!</p>
+            <h2>Because Mark & Rob are getting married!</h2>
         </div>
 
         <div class="section section-2">
             <h1>01.02.2027</h1>
-            <p>at</p>
+            <h2>at</h2>
             <h1 class="no-dot">BRICK YARD 33</h1>
             <h1 class="no-dot chinese-text">美軍俱樂部</h1>
-            <p>Taipei, Taiwan</p>
+            <h2>Taipei, Taiwan</h2>
         </div>
 
         <div class="section section-3">
             <h1>RSVP</h1>
-            <p>Your invitation includes you and a plus-one</p>
+            <h2>Your invitation includes you and a plus-one</h2>
             <div id="rsvp-widget"></div>
         </div>
 
         <div class="section section-4">
             <h1>FLIGHTS & HOTELS</h1>
-            <p>As this is a destination wedding in Taiwan during new years, we recommend booking your hotel and flights early. Here are some recommendations:</p>
+            <h2>As this is a destination wedding in Taiwan during new years, we recommend booking your hotel and flights early. Here are some recommendations:</h2>
         </div>
 
         <div class="section section-5">
@@ -128,23 +128,22 @@
             }
         });
     </script>
-    <script>
-        (function (w, d, s, o, f, js, fjs) {
-          w[o] = w[o] || function () { (w[o].q = w[o].q || []).push(arguments) };
-          js = d.createElement(s), fjs = d.getElementsByTagName(s)[0];
-          js.id = o; js.src = f; js.async = 1; fjs.parentNode.insertBefore(js, fjs);
-        }(window, document, 'script', 'oursvp', 'https://www.oursvp.app/widget/widget.js'));
-        oursvp('init', { 
-          element: document.getElementById('rsvp-widget'),
-          eventId: '7ve6uq43AknI0wLathOd',
-          showBackBtn: false,
-          language: 'english'
-        }); 
-        // rsvp styling 
-        document.body.style.setProperty('--bg-color', '#e3f2fd');
-        document.body.style.setProperty('--heading-color', '#00000080');
-        document.body.style.setProperty('--text-color', '#00000080');
-
-      </script>
+<script>
+    (function (w, d, s, o, f, js, fjs) {
+      w[o] = w[o] || function () { (w[o].q = w[o].q || []).push(arguments) };
+      js = d.createElement(s), fjs = d.getElementsByTagName(s)[0];
+      js.id = o; js.src = f; js.async = 1; fjs.parentNode.insertBefore(js, fjs);
+    }(window, document, 'script', 'oursvp', 'https://www.oursvp.app/widget/widget.js'));
+    oursvp('init', { 
+      element: document.getElementById('rsvp-widget'),
+      eventId: '7ve6uq43AknI0wLathOd',
+      showBackBtn: false,
+      language: 'english'
+    }); 
+    // rsvp styling 
+    document.body.style.setProperty('--heading-color', '#f0f0f0');
+  document.body.style.setProperty('--text-color', '#f0f0f0');
+  document.body.style.setProperty('--bg-color', '#439eff');
+  </script>
 </body>
 </html>
