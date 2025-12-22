@@ -264,11 +264,17 @@ p {
     }
 
     h1 {
-        font-size: 3rem;
+        font-size: 3.5rem;
     }
 
     h2 {
         font-size: 1.2rem;
+    }
+
+    .chinese-text {
+        font-family: "IBM Plex Sans JP", sans-serif; /* ADJUSTABLE: Change font here */
+        font-size: 2rem; /* ADJUSTABLE: Change size here */
+        font-weight: 700; /* Bold (max available weight) */
     }
 
     p {
