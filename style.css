@@ -219,7 +219,7 @@ p {
 
     .section {
         padding: 60px 24px 60px 50px;
-        min-height: 80vh;
+        min-height: 100vh;
         scroll-snap-align: none;
     }
 
@@ -243,15 +243,15 @@ p {
     }
 
     h1 {
-        font-size: 2.2rem;
+        font-size: 4rem;
     }
 
     h2 {
-        font-size: 1.6rem;
+        font-size: 4rem;
     }
 
     p {
-        font-size: 1rem;
+        font-size: 1.5rem;
     }
 
     .placeholder-image {
@@ -280,11 +280,11 @@ p {
     }
 
     h1 {
-        font-size: 1.8rem;
+        font-size: 5rem;
     }
 
     h2 {
-        font-size: 1.4rem;
+        font-size: 4rem;
     }
 }
 
