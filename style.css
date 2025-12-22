@@ -268,7 +268,7 @@ p {
     }
 
     h2 {
-        font-size: 1.2rem;
+        font-size: 1.3rem;
     }
 
     .chinese-text {
@@ -278,7 +278,7 @@ p {
     }
 
     p {
-        font-size: 1rem;
+        font-size: 1.1rem;
     }
 
     .placeholder-image {
@@ -293,7 +293,7 @@ p {
     }
 
     .two-column li {
-        font-size: 1rem; /* ADJUSTABLE: Mobile list item size */
+        font-size: 1.1rem; /* ADJUSTABLE: Mobile list item size */
     }
 }
 
