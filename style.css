@@ -151,6 +151,35 @@ p {
     font-size: 1rem;
 }
 
+/* Two-column layout for flights & hotels */
+.two-column {
+    display: flex;
+    gap: 60px; /* ADJUSTABLE: Space between columns */
+    width: 100%;
+    margin-top: 2rem;
+}
+
+.two-column .column {
+    flex: 1;
+}
+
+.two-column h2 {
+    margin-bottom: 1rem;
+}
+
+.two-column ul {
+    list-style: none;
+    padding: 0;
+}
+
+.two-column li {
+    font-family: 'Raleway', sans-serif;
+    font-weight: 300;
+    font-size: 1.2rem;
+    line-height: 2;
+    color: inherit;
+}
+
 #rsvp-widget {
     width: 100%;
     max-width: 500px;
@@ -235,7 +264,7 @@ p {
     }
 
     h1 {
-        font-size: 4rem;
+        font-size: 3rem;
     }
 
     h2 {
@@ -249,6 +278,12 @@ p {
     .placeholder-image {
         max-width: 100%;
         height: 200px;
+    }
+
+    /* Stack columns on mobile */
+    .two-column {
+        flex-direction: column;
+        gap: 40px;
     }
 }
 
