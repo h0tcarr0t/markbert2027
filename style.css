@@ -54,7 +54,6 @@ spline-viewer {
 .section {
     padding: 80px 60px 80px 80px;
     min-height: 100vh;
-    border-bottom: 1px solid #eee;
     /*scroll-snap-align: start;*/
     position: relative;
     display: flex;
@@ -95,7 +94,7 @@ spline-viewer {
     transform: translateY(-50%);
     width: 17px;
     height: 17px;
-    background: #ffffff;
+    background: #ffffffd0;
     border-radius: 50%;
     border: 3px solid rgb(0, 0, 0, 0.2);
 }
@@ -105,33 +104,48 @@ spline-viewer {
 }
 
 /* Custom colors for each section */
-.section-1 { background: #fce4ec; } /* Light pink */
-.section-2 { background: #e8f5e9; } /* Light green */
-.section-3 { background: #e3f2fd; } /* Light blue */
-.section-4 { background: #fff8e1; } /* Light yellow */
-.section-5 { background: #f5f0e5; } /* Light orange */
+.section-1 { background: #FF4F4F; color: #ffffffd0; }
+.section-2 { background: #ffac53; color: #333333b5; }
+.section-3 { background: #439EFF; color: #ffffffd0; }
+.section-4 { background: #fff36d; color: #333333b5; }
+.section-5 { background: #16a857; color: #ffffffd0; }
+
+/* Dot colors per section */
+.section-1 h1::before, .section-1 h2::before { background: #ffffffd0; border-color: #00000030; }
+.section-2 h1::before, .section-2 h2::before { background: #333333b5; border-color: #00000030; }
+.section-3 h1::before, .section-3 h2::before { background: #ffffffd0; border-color: #00000030; }
+.section-4 h1::before, .section-4 h2::before { background: #333333b5; border-color: #00000030; }
+.section-5 h1::before, .section-5 h2::before { background: #ffffffd0; border-color: #00000030; }
 
 h1 {
-    font-family: 'Lulo Clean', system-ui, sans-serif;
-    font-size: 3rem;
+    font-family: 'Squada One', system-ui, sans-serif;
+    font-size: 5rem;
     font-weight: normal;
     margin-bottom: 1.2rem;
-    color: #00000080;
+    color: inherit;
 }
 
 h2 {
-    font-family: 'Lulo Clean', system-ui, sans-serif;
-    font-size: 2rem;
+    font-family: 'Squada One', system-ui, sans-serif;
+    font-size: 4rem;
     font-weight: normal;
     margin-bottom: 1rem;
-    color: #00000080;
+    color: inherit;
+}
+
+/* Chinese text styling */
+.chinese-text {
+    font-family: "IBM Plex Sans JP", sans-serif; /* ADJUSTABLE: Change font here */
+    font-size: 3.5rem; /* ADJUSTABLE: Change size here */
+    font-weight: 700; /* Bold (max available weight) */
 }
 
 p {
-    font-family: 'Museo Slab', Georgia, serif;
+    font-family: 'Raleway', sans-serif;
+    font-weight: 300; /* Light weight for elegance */
     font-size: 1.5rem;
     line-height: 1.8;
-    color: #00000080;
+    color: inherit;
     max-width: 700px;
     margin-bottom: 1.5rem;
 }
