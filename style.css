@@ -243,15 +243,15 @@ p {
     }
 
     h1 {
-        font-size: 5rem;
-    }
-
-    h2 {
         font-size: 4rem;
     }
 
+    h2 {
+        font-size: 3rem;
+    }
+
     p {
-        font-size: 1.5rem;
+        font-size: 1.25rem;
     }
 
     .placeholder-image {
@@ -280,11 +280,11 @@ p {
     }
 
     h1 {
-        font-size: 5rem;
+        font-size: 4rem;
     }
 
     h2 {
-        font-size: 4rem;
+        font-size: 3rem;
     }
 }
 
