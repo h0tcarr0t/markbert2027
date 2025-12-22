@@ -291,5 +291,9 @@ p {
         flex-direction: column;
         gap: 40px;
     }
+
+    .two-column li {
+        font-size: 1rem; /* ADJUSTABLE: Mobile list item size */
+    }
 }
 
