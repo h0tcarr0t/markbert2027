@@ -9,9 +9,19 @@
 <body>
     <!-- Left Column: Fixed Spline Model -->
     <div class="left-column">
-        <spline-viewer class="spline-desktop" url="https://prod.spline.design/lOX2x8duNf5OfECq/scene.splinecode"></spline-viewer>
-        <spline-viewer class="spline-mobile" url="https://prod.spline.design/g2JzIkEz6703ZuSR/scene.splinecode"></spline-viewer>
+        <spline-viewer id="spline-viewer"></spline-viewer>
     </div>
+
+    <!-- Load correct Spline model based on device (before spline-viewer.js loads) -->
+    <script>
+        (function() {
+            const desktopUrl = 'https://prod.spline.design/lOX2x8duNf5OfECq/scene.splinecode';
+            const mobileUrl = 'https://prod.spline.design/g2JzIkEz6703ZuSR/scene.splinecode';
+            const isMobile = window.innerWidth <= 768;
+            
+            document.getElementById('spline-viewer').setAttribute('url', isMobile ? mobileUrl : desktopUrl);
+        })();
+    </script>
 
     <!-- Right Column: Scrollable Content -->
     <div class="right-column">

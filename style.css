@@ -41,16 +41,6 @@ spline-viewer {
     height: 100%;
 }
 
-/* Desktop Spline - visible by default */
-.spline-desktop {
-    display: block;
-}
-
-/* Mobile Spline - hidden by default */
-.spline-mobile {
-    display: none;
-}
-
 /* Right Column - Scrollable Content */
 .right-column {
     width: 50%;
@@ -188,14 +178,6 @@ p {
         flex-direction: column;
         height: auto;
         overflow: auto;
-    }
-
-    /* Swap Spline models */
-    .spline-desktop {
-        display: none;
-    }
-    .spline-mobile {
-        display: block;
     }
 
     /* Spline Model - Full screen fixed background on mobile */
