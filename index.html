@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>M&R 2027</title>
+    <link rel="icon" href="favicon.png" type="image/png">
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Squada+One&family=IBM+Plex+Sans+JP:wght@700&family=Raleway:wght@300;400&display=swap" rel="stylesheet">
 </head>
@@ -32,40 +33,45 @@
         </div>
         <div class="section section-2">
             <h1>01.02.2027</h1>
-            <h2>at</h2>
-            <h1 class="no-dot">BRICK YARD 33</h1>
-            <h1 class="no-dot chinese-text">美軍俱樂部</h1>
+            <h2>at the</h2>
+            <h1 class="no-dot"><a href="https://landezine-award.com/the-brick-yard-33-13/" target="_blank">BRICK YARD 33</a></h1>
+            <h1 class="no-dot chinese-text"><a href="https://landezine-award.com/the-brick-yard-33-13/" target="_blank">美軍俱樂部</a></h1>
             <h2>Taipei, Taiwan</h2>
         </div>
         <div class="section section-3">
+            <h1>RSVP</h1>
+            <h2>Please only RSVP for yourself. We can't wait to celebrate with you!</h2>
+            <div id="rsvp-widget"></div>
+        </div>
+        <div class="section section-4">
             <h1>FLIGHTS & HOTELS</h1>
             <p>As this is a destination wedding in Taiwan during new years, we suggest booking your hotel and flights early. 
-                Below are some recommendations. (You can also book an Airbnb)</p>
+                Below are some recommendations. (You can also book an <a href="https://www.airbnb.com/a/stays/Taipei--Taiwan" target="_blank">Airbnb</a>)</p>
             
             <div class="two-column">
                 <div class="column">
                     <h2>Flights</h2>
                     <ul>
-                        <li>EVA Air</li>
-                        <li>China Airlines</li>
-                        <li>STARLUX Airlines</li>
-                        <li>United Airlines</li>
-                        <li>Delta Airlines</li>
+                        <li><a href="https://www.evaair.com" target="_blank">EVA Air</a></li>
+                        <li><a href="https://www.china-airlines.com" target="_blank">China Airlines</a></li>
+                        <li><a href="https://www.starlux-airlines.com/en-US" target="_blank">STARLUX Airlines</a></li>
+                        <li><a href="https://www.united.com" target="_blank">United Airlines</a></li>
+                        <li><a href="https://www.delta.com" target="_blank">Delta Airlines</a></li>
                     </ul>
                 </div>
                 <div class="column">
                     <h2>Hotels</h2>
                     <ul>
-                        <li>W Taipei</li>
-                        <li>Le Méridien Taipei</li>
-                        <li>Capella Taipei</li>
-                        <li>Marriott Taipei </li>
-                        <li>Park Hyatt (opening 2026) </li>
+                        <li><a href="https://www.marriott.com/en-us/hotels/tpewh-w-taipei/overview/" target="_blank">W Taipei</a></li>
+                        <li><a href="https://www.marriott.com/en-us/hotels/tpedm-le-meridien-taipei/overview/" target="_blank">Le Méridien Taipei</a></li>
+                        <li><a href="https://capellahotels.com/en/capella-taipei" target="_blank">Capella Taipei</a></li>
+                        <li><a href="https://www.marriott.com/en-us/hotels/tpetm-taipei-marriott-hotel/overview/" target="_blank">Marriott Taipei </a></li>
+                        <li><a href="https://www.mandarinoriental.com/en/taipei/songshan" target="_blank">Mandarin Oriental</a></li>
                     </ul>
                 </div>
             </div>
         </div>
-        <div class="section section-4">
+        <div class="section section-5">
             <h1>FAQ</h1>
             <h2>Can I bring a plus-one?</h2>
             <p>To keep the celebration intimate and personal, we’re only able to invite the guests in the guestlist. If your plus-one is invited, a separate invitation is sent to them.</p>
@@ -74,18 +80,13 @@
             <h2>Can dietary restrictions be accommodated?</h2>
             <p>Per venue and catering guidelines, we may have limited ability to accommodate specific dietary restrictions. However, there will be a vegetarian option available. Please indicate your meal preference in the RSVP.</p>
             <h2>How do I get to the city from the Airport (and back)?</h2>
-            <p>We highly recommend taking the Taoyuan Airport MRT. It’s a high speed transit that takes you directly from the Airport to Taipei Main Station within 40 minutes, and costs about $5 USD. Alternatively there are also Taxis and Ubers you can take.</p>
+            <p>We highly recommend taking the <a href="https://www.travel.taipei/en/information/taoyuanmetro" target="_blank">Taoyuan Airport MRT.</a> It’s a high speed transit that takes you directly from the Airport to Taipei Main Station within 40 minutes, and costs about $5 USD. Alternatively there are also Taxis and Ubers you can take.</p>
             <h2>How do I get to the venue?</h2>
             <p>There are limited parking spaces at the venue. We will provide more details on transportation closer to the wedding date.</p>
             <h2>Is English widely spoken?</h2>
             <p>Yes! Hotels, restaurants, and MRT stations offer bilingual signage. Locals are friendly, and with Uber, Google Maps, and English menus in many places, navigating the city is easy.</p>
             <h2>What’s the wedding schedule?</h2>
             <p>The full wedding schedule will be revealed closer to the wedding date.</p>
-        </div>
-        <div class="section section-5">
-            <h1>RSVP</h1>
-            <h2>Please only RSVP for yourself. We can't wait to celebrate with you!</h2>
-            <div id="rsvp-widget"></div>
         </div>
     </div>
 
@@ -168,16 +169,17 @@
     oursvp('init', { 
       element: document.getElementById('rsvp-widget'),
       eventId: '7ve6uq43AknI0wLathOd',
-      showBackBtn: false,
+      showBackBtn: true,
       language: 'english'
     }); 
     // rsvp styling 
-    document.body.style.setProperty('--heading-color', '#f0f0f0');
-    document.body.style.setProperty('--text-color', '#f0f0f0');
-    document.body.style.setProperty('--bg-color', '#16a857');
+    document.body.style.setProperty('--bg-color', '#439eff');
+    document.body.style.setProperty('--border-color', '#439eff');
+    document.body.style.setProperty('--button-bg-color', '#b3daff');
+    document.body.style.setProperty('--heading-color', '#ffffff');
+    document.body.style.setProperty('--text-color', '#ffffff');
+    document.body.style.setProperty('--accent-color', '#0062cc');
     document.body.style.setProperty('--button-text-color', '#000000');
-    document.body.style.setProperty('--border-color', '#16a857');
-    document.body.style.setProperty('--button-bg-color', '#1bec7b');
   </script>
 </body>
 </html>

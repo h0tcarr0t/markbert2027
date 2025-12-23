@@ -102,6 +102,23 @@ spline-viewer {
 .section-4 h1::before { background: #333333b5; border-color: #00000030; }
 .section-5 h1::before { background: #ffffffd0; border-color: #00000030; }
 
+/* Link styling */
+a {
+    text-decoration: none;
+    transition: opacity 0.2s ease;
+}
+
+a:hover {
+    opacity: 0.6;
+}
+
+/* Link colors per section */
+.section-1 a { color: #cbe6ffd0; }
+.section-2 a { color: #0025449c; }
+.section-3 a { color: #cbe6ffd0; }
+.section-4 a { color: #0025449c; }
+.section-5 a { color: #c7e4ffd0; }
+
 h1 {
     font-family: 'Squada One', system-ui, sans-serif;
     font-size: 5rem;
@@ -273,7 +290,7 @@ p {
 
     .chinese-text {
         font-family: "IBM Plex Sans JP", sans-serif; /* ADJUSTABLE: Change font here */
-        font-size: 2rem; /* ADJUSTABLE: Change size here */
+        font-size: 3rem; /* ADJUSTABLE: Change size here */
         font-weight: 700; /* Bold (max available weight) */
     }
 
