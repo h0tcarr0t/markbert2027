@@ -267,11 +267,11 @@ p {
     }
 
     .section:first-child::before {
-        top: 80px;
+        top: 0; /* Start at top of first section */
     }
 
     .section:last-child::before {
-        bottom: calc(100% - 70px);
+        bottom: 0; /* Extend to bottom of last section */
     }
 
     .section h1::before {
