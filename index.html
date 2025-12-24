@@ -40,7 +40,7 @@
         </div>
         <div class="section section-3">
             <h1>RSVP</h1>
-            <h2>Please only RSVP for yourself. We can't wait to celebrate with you!</h2>
+            <h2>Please RSVP for yourself only. We can't wait to celebrate with you!</h2>
             <div id="rsvp-widget"></div>
         </div>
         <div class="section section-4">
@@ -180,33 +180,6 @@
     document.body.style.setProperty('--text-color', '#ffffff');
     document.body.style.setProperty('--accent-color', '#0062cc');
     document.body.style.setProperty('--button-text-color', '#000000');
-
-    // Hide the "responding for you and a guest" text from RSVP widget
-    function hideRsvpText() {
-      const widget = document.getElementById('rsvp-widget');
-      if (widget) {
-        const targetText = "If you're responding for you and a guest";
-        const walker = document.createTreeWalker(widget, NodeFilter.SHOW_TEXT, null, false);
-        let node;
-        while (node = walker.nextNode()) {
-          if (node.textContent.includes(targetText)) {
-            // Hide only the direct parent of this text node (smallest container)
-            if (node.parentElement && node.parentElement.children.length === 0) {
-              node.parentElement.style.display = 'none';
-            } else {
-              // If parent has other children, just clear this text
-              node.textContent = '';
-            }
-          }
-        }
-      }
-    }
-    // Run periodically until widget loads
-    const hideInterval = setInterval(() => {
-      hideRsvpText();
-    }, 500);
-    // Stop checking after 10 seconds
-    setTimeout(() => clearInterval(hideInterval), 10000);
   </script>
 </body>
 </html>
