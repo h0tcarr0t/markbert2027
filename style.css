@@ -316,5 +316,10 @@ label[for=search] {
     .two-column li {
         font-size: 1.1rem; /* ADJUSTABLE: Mobile list item size */
     }
+    
+    label[for=search] {
+        display: none;
+      }
+    
 }
 
