@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>M&R 2027 — Scene Test</title>
+    <link rel="icon" href="favicon.png" type="image/png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #1D161B;
+        }
+
+        #spline-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #content {
+            position: fixed;
+            top: 0;
+            left: 62vw;
+            width: 38vw;
+            height: 100vh;
+            overflow: hidden;
+            color: #ffffff;
+            padding: 2rem;
+            font-family: Arial, sans-serif;
+            background: transparent;
+            z-index: 1;
+            --section-shift: 252px;
+            --section-duration: 300ms;
+        }
+
+        .content-section {
+            position: absolute;
+            inset: 0;
+            padding: 2rem;
+            opacity: 0;
+            transform: translateX(0);
+            pointer-events: none;
+        }
+
+        .content-section.is-animating {
+            transition: opacity var(--section-duration) ease-in-out, transform var(--section-duration) ease-in-out;
+        }
+
+        .content-section.is-active {
+            opacity: 1;
+            transform: translateX(0);
+            pointer-events: auto;
+        }
+
+        .content-section.enter-from-left {
+            transform: translateX(calc(var(--section-shift) * -1));
+        }
+
+        .content-section.enter-from-right {
+            transform: translateX(var(--section-shift));
+        }
+
+        .content-section.exit-to-left {
+            transform: translateX(calc(var(--section-shift) * -1));
+        }
+
+        .content-section.exit-to-right {
+            transform: translateX(var(--section-shift));
+        }
+    </style>
+</head>
+<body>
+    <canvas id="spline-canvas"></canvas>
+    <main id="content">
+        <section class="content-section is-active" data-section-index="0">
+            <h1>Content Area 1</h1>
+        </section>
+        <section class="content-section" data-section-index="1">
+            <h1>Content Area 2</h1>
+        </section>
+        <section class="content-section" data-section-index="2">
+            <h1>Content Area 3</h1>
+        </section>
+        <section class="content-section" data-section-index="3">
+            <h1>Content Area 4</h1>
+        </section>
+    </main>
+
+    <script type="module">
+        import { Application } from 'https://unpkg.com/@splinetool/runtime@latest/build/runtime.js';
+
+        const SCENE = 'https://prod.spline.design/C1BUyPU9yQdApM7J/scene.splinecode';
+
+        // Rotation applied per click side, in radians.
+        // Left side click: +90deg, right side click: -90deg.
+        const ROTATION_STEP_LEFT = Math.PI / 2;
+        const ROTATION_STEP_RIGHT = -Math.PI / 2;
+        const SECTION_COUNT = 4;
+        const ROTATION_DURATION = 1000;
+        const TARGET_NAME = 'Origin';
+        const CURSOR_SIZE = 35;
+        // Shift the whole scene left in world space while keeping a full-screen canvas.
+        const MODEL_OFFSET_X = -650;
+        // Move the whole scene up in world space.
+        const MODEL_OFFSET_Y = 300;
+
+        const params = new URLSearchParams(window.location.search);
+        const DEBUG = params.has('debug');
+
+        function easeInOut(t) {
+            return t < 0.5
+                ? 4 * t * t * t
+                : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        }
+
+        const canvas = document.getElementById('spline-canvas');
+        const app = new Application(canvas);
+        const leftArrowCursor = `url("data:image/svg+xml;utf8,${encodeURIComponent(`
+            <svg xmlns='http://www.w3.org/2000/svg' width='${CURSOR_SIZE}' height='${CURSOR_SIZE}' viewBox='0 0 32 32'>
+                <path d='M6 16L14 8V13H26V19H14V24Z' fill='black' stroke='white' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'/>
+            </svg>
+        `)}") 16 16, pointer`;
+        const rightArrowCursor = `url("data:image/svg+xml;utf8,${encodeURIComponent(`
+            <svg xmlns='http://www.w3.org/2000/svg' width='${CURSOR_SIZE}' height='${CURSOR_SIZE}' viewBox='0 0 32 32'>
+                <path d='M26 16L18 8V13H6V19H18V24Z' fill='black' stroke='white' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'/>
+            </svg>
+        `)}") 16 16, pointer`;
+
+        const spline = {
+            app,
+
+            get(name) {
+                const object = app.findObjectByName(name);
+                if (!object && DEBUG) {
+                    console.warn(`[spline] no object named "${name}"`);
+                }
+                return object;
+            },
+
+            list() {
+                const objects = app.getAllObjects().map(({ name, id }) => ({ name, id }));
+                console.table(objects);
+                return objects;
+            },
+
+            inspect(name) {
+                const object = spline.get(name);
+                if (!object) {
+                    return null;
+                }
+                console.log(JSON.stringify({
+                    name: object.name,
+                    position: { x: object.position.x, y: object.position.y, z: object.position.z },
+                    rotation: { x: object.rotation.x, y: object.rotation.y, z: object.rotation.z },
+                    scale: { x: object.scale.x, y: object.scale.y, z: object.scale.z },
+                    visible: object.visible
+                }, null, 2));
+                return object;
+            },
+
+            emit(event, name) {
+                app.emitEvent(event, name);
+            }
+        };
+
+        window.spline = spline;
+
+        function rotateOnClick(target) {
+            const baseY = target.rotation.y;
+            const content = document.getElementById('content');
+            const sections = Array.from(content.querySelectorAll('[data-section-index]'));
+            const quarterTurn = Math.PI / 2;
+            content.style.setProperty('--section-duration', `${ROTATION_DURATION}ms`);
+            let currentSectionIndex = sections.findIndex((section) => section.classList.contains('is-active'));
+            if (currentSectionIndex < 0) {
+                currentSectionIndex = 0;
+            }
+
+            // Keep an absolute target angle so rapid clicks queue smoothly.
+            let targetAngle = 0;
+            let fromAngle = 0;
+            let currentAngle = 0;
+            let startTime = null;
+            let frame = null;
+            let cleanupTimer = null;
+            let transitionRaf1 = null;
+            let transitionRaf2 = null;
+
+            function tick(now) {
+                if (startTime === null) {
+                    startTime = now;
+                }
+
+                const t = Math.min((now - startTime) / ROTATION_DURATION, 1);
+
+                currentAngle = fromAngle + (targetAngle - fromAngle) * easeInOut(t);
+                target.rotation.y = baseY + currentAngle;
+
+                if (t < 1) {
+                    frame = requestAnimationFrame(tick);
+                } else {
+                    frame = null;
+                }
+            }
+
+            function normalizeSectionIndex(turns) {
+                return ((turns % SECTION_COUNT) + SECTION_COUNT) % SECTION_COUNT;
+            }
+
+            function setActiveSection(sectionIndex, direction) {
+                if (sectionIndex === currentSectionIndex) {
+                    return;
+                }
+
+                const outgoing = sections[currentSectionIndex];
+                const incoming = sections.find(
+                    (section) => Number(section.dataset.sectionIndex) === sectionIndex
+                );
+
+                if (!incoming) {
+                    return;
+                }
+
+                const enterClass = direction === 'clockwise' ? 'enter-from-left' : 'enter-from-right';
+                const exitClass = direction === 'clockwise' ? 'exit-to-right' : 'exit-to-left';
+
+                sections.forEach((section) => {
+                    section.classList.remove(
+                        'enter-from-left',
+                        'enter-from-right',
+                        'exit-to-left',
+                        'exit-to-right',
+                        'is-animating'
+                    );
+                });
+
+                incoming.classList.remove('is-active');
+                incoming.classList.add(enterClass);
+                // Force initial enter position before activating transition.
+                void incoming.offsetWidth;
+
+                if (transitionRaf1 !== null) {
+                    cancelAnimationFrame(transitionRaf1);
+                }
+                if (transitionRaf2 !== null) {
+                    cancelAnimationFrame(transitionRaf2);
+                }
+
+                // Two RAFs ensure the browser commits the start transform first,
+                // then animates toward the active state every time.
+                transitionRaf1 = requestAnimationFrame(() => {
+                    transitionRaf2 = requestAnimationFrame(() => {
+                        if (outgoing) {
+                            outgoing.classList.add('is-animating');
+                            outgoing.classList.add(exitClass);
+                            outgoing.classList.remove('is-active');
+                        }
+                        incoming.classList.add('is-animating');
+                        incoming.classList.add('is-active');
+                        incoming.classList.remove(enterClass);
+                        transitionRaf1 = null;
+                        transitionRaf2 = null;
+                    });
+                });
+
+                if (cleanupTimer !== null) {
+                    clearTimeout(cleanupTimer);
+                }
+                cleanupTimer = window.setTimeout(() => {
+                    sections.forEach((section) => section.classList.remove('is-animating'));
+                    cleanupTimer = null;
+                }, ROTATION_DURATION + 20);
+
+                currentSectionIndex = sectionIndex;
+            }
+
+            function updateCursor(event) {
+                const contentRect = content.getBoundingClientRect();
+                const isInsideContent =
+                    event.clientX >= contentRect.left &&
+                    event.clientX <= contentRect.right &&
+                    event.clientY >= contentRect.top &&
+                    event.clientY <= contentRect.bottom;
+
+                if (isInsideContent) {
+                    canvas.style.cursor = '';
+                    return;
+                }
+
+                const modelAreaMidX = contentRect.left / 2;
+                canvas.style.cursor = event.clientX < modelAreaMidX ? leftArrowCursor : rightArrowCursor;
+            }
+
+            // Capture phase, so the click still counts if Spline handles it first.
+            window.addEventListener('pointerdown', (event) => {
+                const contentRect = content.getBoundingClientRect();
+                const isInsideContent =
+                    event.clientX >= contentRect.left &&
+                    event.clientX <= contentRect.right &&
+                    event.clientY >= contentRect.top &&
+                    event.clientY <= contentRect.bottom;
+
+                if (isInsideContent) {
+                    return;
+                }
+
+                if (frame !== null) {
+                    cancelAnimationFrame(frame);
+                }
+
+                // Split at the center of the interactive model area:
+                // from viewport left edge to the start of the content panel.
+                const modelAreaMidX = contentRect.left / 2;
+                const step = event.clientX < modelAreaMidX ? ROTATION_STEP_LEFT : ROTATION_STEP_RIGHT;
+                const direction = step < 0 ? 'clockwise' : 'counterclockwise';
+                targetAngle += step;
+                const turns = Math.round(targetAngle / quarterTurn);
+                const sectionIndex = normalizeSectionIndex(-turns);
+                setActiveSection(sectionIndex, direction);
+                fromAngle = currentAngle;
+                startTime = null;
+                frame = requestAnimationFrame(tick);
+
+                if (DEBUG) {
+                    console.log(`[spline] click -> ${(targetAngle * 180 / Math.PI).toFixed(1)}deg section ${sectionIndex + 1}`);
+                }
+            }, { capture: true });
+
+            window.addEventListener('pointermove', updateCursor, { capture: true });
+            window.addEventListener('pointerleave', () => {
+                canvas.style.cursor = '';
+            }, { capture: true });
+        }
+
+        // ?fresh sidesteps a stale cached copy of the scene while iterating in Spline.
+        const sceneUrl = params.has('fresh')
+            ? `${SCENE}?t=${Date.now()}`
+            : SCENE;
+
+        app.load(sceneUrl).then(() => {
+            const target = spline.get(TARGET_NAME);
+
+            if (target) {
+                target.position.x += MODEL_OFFSET_X;
+                target.position.y += MODEL_OFFSET_Y;
+                rotateOnClick(target);
+            } else {
+                console.error(`[spline] "${TARGET_NAME}" not found; click rotation is disabled.`);
+            }
+
+            if (DEBUG) {
+                spline.list();
+                spline.inspect(TARGET_NAME);
+            }
+
+            window.dispatchEvent(new CustomEvent('spline:ready', { detail: { app } }));
+        }).catch((error) => {
+            console.error('[spline] failed to load scene', error);
+        });
+    </script>
+</body>
+</html>
