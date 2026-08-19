@@ -109,6 +109,15 @@
         const SECTION_COUNT = 4;
         const ROTATION_DURATION = 1000;
         const TARGET_NAME = 'Origin';
+        const SECTION_OBJECT_NAMES = ['Section1', 'Section2', 'Section3', 'Section4'];
+        const ACTIVE_SECTION_SCALE = 1;
+        const INACTIVE_SECTION_SCALE = 0;
+        const SECTION_BACKGROUND_COLORS = [
+            { r: 23, g: 23, b: 27 },   // section 1: original
+            { r: 60, g: 24, b: 58 },   // section 2: dark purple
+            { r: 16, g: 34, b: 80 },   // section 3: colder dark blue
+            { r: 14, g: 45, b: 24 }    // section 4: darker green
+        ];
         const CURSOR_SIZE = 35;
         // Shift the whole scene left in world space while keeping a full-screen canvas.
         const MODEL_OFFSET_X = -650;
@@ -180,6 +189,7 @@
             const baseY = target.rotation.y;
             const content = document.getElementById('content');
             const sections = Array.from(content.querySelectorAll('[data-section-index]'));
+            const sectionObjects = SECTION_OBJECT_NAMES.map((name) => spline.get(name));
             const quarterTurn = Math.PI / 2;
             content.style.setProperty('--section-duration', `${ROTATION_DURATION}ms`);
             let currentSectionIndex = sections.findIndex((section) => section.classList.contains('is-active'));
@@ -196,6 +206,96 @@
             let cleanupTimer = null;
             let transitionRaf1 = null;
             let transitionRaf2 = null;
+            let sectionScaleFrame = null;
+            let backgroundFrame = null;
+            let sectionScaleValues = Array.from({ length: SECTION_COUNT }, (_, index) =>
+                index === currentSectionIndex ? ACTIVE_SECTION_SCALE : INACTIVE_SECTION_SCALE
+            );
+            let currentBackgroundColor = { ...SECTION_BACKGROUND_COLORS[currentSectionIndex] };
+
+            function applySectionObjectScales(scales) {
+                sectionObjects.forEach((object, index) => {
+                    if (!object) {
+                        return;
+                    }
+                    const value = scales[index];
+                    object.scale.x = value;
+                    object.scale.y = value;
+                    object.scale.z = value;
+                });
+            }
+
+            function animateSectionObjectScales(nextSectionIndex) {
+                if (sectionScaleFrame !== null) {
+                    cancelAnimationFrame(sectionScaleFrame);
+                }
+
+                const from = sectionScaleValues.slice();
+                const to = Array.from({ length: SECTION_COUNT }, (_, index) =>
+                    index === nextSectionIndex ? ACTIVE_SECTION_SCALE : INACTIVE_SECTION_SCALE
+                );
+                let scaleStart = null;
+
+                function scaleTick(now) {
+                    if (scaleStart === null) {
+                        scaleStart = now;
+                    }
+                    const t = Math.min((now - scaleStart) / ROTATION_DURATION, 1);
+                    const eased = easeInOut(t);
+                    sectionScaleValues = from.map((startValue, index) => {
+                        const targetValue = to[index];
+                        return startValue + (targetValue - startValue) * eased;
+                    });
+                    applySectionObjectScales(sectionScaleValues);
+
+                    if (t < 1) {
+                        sectionScaleFrame = requestAnimationFrame(scaleTick);
+                    } else {
+                        sectionScaleFrame = null;
+                    }
+                }
+
+                sectionScaleFrame = requestAnimationFrame(scaleTick);
+            }
+
+            function setBackgroundColor(color) {
+                document.body.style.backgroundColor = `rgb(${Math.round(color.r)}, ${Math.round(color.g)}, ${Math.round(color.b)})`;
+            }
+
+            function animateBackgroundColor(nextSectionIndex) {
+                if (backgroundFrame !== null) {
+                    cancelAnimationFrame(backgroundFrame);
+                }
+
+                const from = { ...currentBackgroundColor };
+                const to = { ...SECTION_BACKGROUND_COLORS[nextSectionIndex] };
+                let bgStart = null;
+
+                function bgTick(now) {
+                    if (bgStart === null) {
+                        bgStart = now;
+                    }
+                    const t = Math.min((now - bgStart) / ROTATION_DURATION, 1);
+                    const eased = easeInOut(t);
+                    currentBackgroundColor = {
+                        r: from.r + (to.r - from.r) * eased,
+                        g: from.g + (to.g - from.g) * eased,
+                        b: from.b + (to.b - from.b) * eased
+                    };
+                    setBackgroundColor(currentBackgroundColor);
+
+                    if (t < 1) {
+                        backgroundFrame = requestAnimationFrame(bgTick);
+                    } else {
+                        backgroundFrame = null;
+                    }
+                }
+
+                backgroundFrame = requestAnimationFrame(bgTick);
+            }
+
+            applySectionObjectScales(sectionScaleValues);
+            setBackgroundColor(currentBackgroundColor);
 
             function tick(now) {
                 if (startTime === null) {
@@ -283,6 +383,8 @@
                 }, ROTATION_DURATION + 20);
 
                 currentSectionIndex = sectionIndex;
+                animateSectionObjectScales(currentSectionIndex);
+                animateBackgroundColor(currentSectionIndex);
             }
 
             function updateCursor(event) {
