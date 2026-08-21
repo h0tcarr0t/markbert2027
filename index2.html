@@ -413,6 +413,12 @@
         // Extra pixel nudge applied after the ratio-based placement above.
         const MOBILE_TARGET_NUDGE_X = 40;
         const MOBILE_TARGET_NUDGE_Y = 0;
+        // The zoomed canvas is many times the size of the screen, so at a phone's
+        // native pixel ratio its buffer runs past what iOS Safari will allocate and
+        // the tab is killed. Cap the render resolution instead of the zoom. Raising
+        // the budget sharpens the model but brings back the risk of a crash.
+        const MOBILE_PIXEL_BUDGET = 6000000;
+        const MOBILE_MAX_CANVAS_DIMENSION = 4096;
 
         const params = new URLSearchParams(window.location.search);
         const DEBUG = params.has('debug');
@@ -421,6 +427,27 @@
         function easeOut(t) {
             return 1 - Math.pow(1 - t, 3);
         }
+
+        const nativePixelRatio = window.devicePixelRatio || 1;
+
+        function mobileRenderPixelRatio() {
+            const width = window.innerWidth * MOBILE_ZOOM;
+            const height = window.innerHeight * MOBILE_ZOOM;
+            const byBudget = Math.sqrt(MOBILE_PIXEL_BUDGET / (width * height));
+            const byDimension = MOBILE_MAX_CANVAS_DIMENSION / Math.max(width, height);
+            return Math.min(nativePixelRatio, byBudget, byDimension);
+        }
+
+        // The renderer reads devicePixelRatio to size its buffer, so this is the
+        // only hook for keeping the zoomed mobile canvas within Safari's limits.
+        Object.defineProperty(window, 'devicePixelRatio', {
+            configurable: true,
+            get() {
+                return window.innerWidth <= MOBILE_BREAKPOINT
+                    ? mobileRenderPixelRatio()
+                    : nativePixelRatio;
+            }
+        });
 
         const canvas = document.getElementById('spline-canvas');
         const app = new Application(canvas);
