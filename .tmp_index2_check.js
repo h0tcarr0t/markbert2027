@@ -1,267 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>M&R 2027 — Scene Test</title>
-    <link rel="icon" href="favicon.png" type="image/png">
-    <link href="https://fonts.googleapis.com/css2?family=Squada+One&family=IBM+Plex+Sans+JP:wght@700&family=Raleway:wght@300;400&display=swap" rel="stylesheet">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
 
-        html, body {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background: #1D161B;
-        }
-
-        #spline-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            display: block;
-            width: 100vw;
-            height: 100vh;
-        }
-
-        #content {
-            position: fixed;
-            top: 0;
-            left: 62vw;
-            width: 38vw;
-            height: 100vh;
-            overflow-y: auto;
-            overflow-x: hidden;
-            color: #ffffff;
-            padding: 2rem;
-            font-family: Arial, sans-serif;
-            background: transparent;
-            z-index: 1;
-            --section-shift: 100%;
-            --section-duration: 300ms;
-        }
-
-        .content-section {
-            position: absolute;
-            inset: 0;
-            padding: 2rem;
-            opacity: 0;
-            transform: translateX(0);
-            pointer-events: none;
-            overflow-y: auto;
-            overscroll-behavior: contain;
-        }
-
-        #content h1 {
-            font-family: 'Squada One', system-ui, sans-serif;
-            font-size: 5rem;
-            font-weight: normal;
-            margin-bottom: 1.2rem;
-            line-height: 1;
-            color: inherit;
-            position: relative;
-        }
-
-        #content h2 {
-            font-family: 'Raleway', sans-serif;
-            font-weight: 300;
-            font-size: 1.5rem;
-            line-height: 1.8;
-            color: inherit;
-            max-width: 700px;
-            margin-bottom: 1.5rem;
-            margin-left: 10px;
-            position: relative;
-        }
-
-        #content p {
-            font-family: 'Raleway', sans-serif;
-            font-weight: 300;
-            font-size: 1.2rem;
-            line-height: 1.5;
-            color: inherit;
-            max-width: 700px;
-            margin-bottom: 1rem;
-            margin-left: 10px;
-            position: relative;
-        }
-
-        .content-section.is-animating {
-            transition: opacity var(--section-duration) ease-in-out, transform var(--section-duration) ease-in-out;
-        }
-
-        .content-section.is-active {
-            opacity: 1;
-            transform: translateX(0);
-            pointer-events: auto;
-        }
-
-        .content-section.enter-from-left {
-            transform: translateX(calc(var(--section-shift) * -1));
-        }
-
-        .content-section.enter-from-right {
-            transform: translateX(var(--section-shift));
-        }
-
-        .content-section.exit-to-left {
-            transform: translateX(calc(var(--section-shift) * -1));
-        }
-
-        .content-section.exit-to-right {
-            transform: translateX(var(--section-shift));
-        }
-
-        /* Migrated from original index.html section-2 styling */
-        .wedding-details {
-            color: #FFF8A8;
-        }
-
-        .wedding-details a {
-            color: #FFF8A8;
-            text-decoration: none;
-            transition: color 0.2s ease;
-        }
-
-        .wedding-details a:hover {
-            color: #FFFFC9;
-        }
-
-        .wedding-details .no-dot::before {
-            display: none !important;
-        }
-
-        #content .wedding-details .chinese-text {
-            font-family: "IBM Plex Sans JP", sans-serif;
-            font-size: 3.5rem;
-            font-weight: 700;
-        }
-
-        #content .wedding-details h2.rsvp-note {
-            font-size: calc(1.5rem * 0.8);
-        }
-
-        .section-two-content {
-            color: #D7D7D7;
-        }
-
-        .section-two-content a {
-            color: #ffffff;
-            text-decoration: none;
-            transition: color 0.2s ease;
-        }
-
-        #content .section-two-content a.registry-bright-link {
-            color: #ffffff !important;
-        }
-
-        .section-three-content {
-            color: #B8D6FF;
-        }
-
-        .section-four-content {
-            color: #BFFFCB;
-        }
-
-        #rsvp-widget {
-            width: 100%;
-            max-width: 500px;
-            margin-top: calc(0.75rem - 44px);
-            margin-left: -15px !important;
-            transform: scale(0.9);
-            transform-origin: top left;
-        }
-
-        #rsvp-widget .rsvp-survey {
-            background: transparent !important;
-        }
-
-        /* RSVP CTA emphasis */
-        #rsvp-widget button {
-            background: var(--rsvp-cta-color, #2e6bff) !important;
-            color: #FFF8A8 !important;
-            border: 2px solid #FFF8A8 !important;
-            font-weight: 700 !important;
-        }
-
-        #rsvp-widget,
-        #rsvp-widget * {
-            color: #FFF8A8 !important;
-            border-color: #FFF8A8 !important;
-            font-family: 'Raleway', sans-serif !important;
-            font-weight: 300 !important;
-            font-size: 1.2rem !important;
-            line-height: 1.5 !important;
-        }
-
-        #rsvp-widget input,
-        #rsvp-widget textarea,
-        #rsvp-widget select {
-            color: #000000 !important;
-            -webkit-text-fill-color: #000000 !important;
-        }
-    </style>
-</head>
-<body>
-    <canvas id="spline-canvas"></canvas>
-    <main id="content">
-        <section class="content-section is-active wedding-details" data-section-index="0">
-            <h1>01.02.2027</h1>
-            <h2>at the</h2>
-            <h1 class="no-dot"><a href="https://landezine-award.com/the-brick-yard-33-13/" target="_blank">BRICK YARD 33</a></h1>
-            <h1 class="no-dot chinese-text"><a href="https://landezine-award.com/the-brick-yard-33-13/" target="_blank">美軍俱樂部</a></h1>
-            <h2>Taipei, Taiwan</h2>
-            <h2 class="rsvp-note"><em>Please RSVP below if you have not already</em></h2>
-            <div id="rsvp-widget"></div>
-        </section>
-        <section class="content-section section-two-content" data-section-index="1">
-            <h1>Dress Code</h1>
-            <h2>Formal Attire · Black Tie Optional</h2>
-            <h2>Black &amp; White Palette</h2>
-            <h1>Registry</h1>
-            <p>Instead of a gift registry, we invite guests to participate in the Taiwanese tradition of <a class="registry-bright-link" href="https://en.wikipedia.org/wiki/Red_envelope" target="_blank">Red Envelopes (紅包)</a>. Your presence truly means the most, and any contribution is warmly appreciated.</p>
-            <h1>Travel</h1>
-            <p>As this is a destination wedding in Taiwan during new years, we suggest booking your hotel and flights early. 
-                Below are some recommendations. (You can also book an <a href="https://www.airbnb.com/a/stays/Taipei--Taiwan" target="_blank">Airbnb</a>)</p>
-            
-            <div class="two-column">
-                <div class="column">
-                    <h2>Flights</h2>
-                    <ul>
-                        <li><a href="https://www.evaair.com" target="_blank">EVA Air</a></li>
-                        <li><a href="https://www.china-airlines.com" target="_blank">China Airlines</a></li>
-                        <li><a href="https://www.starlux-airlines.com/en-US" target="_blank">STARLUX Airlines</a></li>
-                        <li><a href="https://www.united.com" target="_blank">United Airlines</a></li>
-                        <li><a href="https://www.delta.com" target="_blank">Delta Airlines</a></li>
-                    </ul>
-                </div>
-                <div class="column">
-                    <h2>Hotels</h2>
-                    <ul>
-                        <li><a href="https://www.marriott.com/en-us/hotels/tpewh-w-taipei/overview/" target="_blank">W Taipei</a></li>
-                        <li><a href="https://www.marriott.com/en-us/hotels/tpedm-le-meridien-taipei/overview/" target="_blank">Le Méridien Taipei</a></li>
-                        <li><a href="https://capellahotels.com/en/capella-taipei" target="_blank">Capella Taipei</a></li>
-                        <li><a href="https://www.marriott.com/en-us/hotels/tpetm-taipei-marriott-hotel/overview/" target="_blank">Marriott Taipei </a></li>
-                        <li><a href="https://www.mandarinoriental.com/en/taipei/songshan" target="_blank">Mandarin Oriental</a></li>
-                    </ul>
-                </div>
-            </div>
-        </section>
-        <section class="content-section section-three-content" data-section-index="2">
-            <h1>Content Area 3</h1>
-        </section>
-        <section class="content-section section-four-content" data-section-index="3">
-            <h1>Content Area 4</h1>
-        </section>
-    </main>
-
-    <script type="module">
-        import { Application } from 'https://unpkg.com/@splinetool/runtime@1.12.18/build/runtime.js';
 
         const SCENE = 'https://prod.spline.design/C1BUyPU9yQdApM7J/scene.splinecode';
 
@@ -378,7 +115,7 @@
 
             function applySectionObjectScales(scales) {
                 sectionObjects.forEach((object, index) => {
-                    if (!object || !object.scale) {
+                    if (!object) {
                         return;
                     }
                     const value = scales[index];
@@ -624,10 +361,10 @@
             }, { capture: true });
         }
 
-        // Always use the exact export URL from Spline.
-        // Appending cache-buster query params can cause invalid responses
-        // with newer Spline CDN behavior.
-        const sceneUrl = SCENE;
+        // ?fresh sidesteps a stale cached copy of the scene while iterating in Spline.
+        const sceneUrl = params.has('fresh')
+            ? `${SCENE}?t=${Date.now()}`
+            : SCENE;
 
         app.load(sceneUrl).then(() => {
             const target = spline.get(TARGET_NAME);
@@ -635,11 +372,7 @@
             if (target) {
                 target.position.x += MODEL_OFFSET_X;
                 target.position.y += MODEL_OFFSET_Y;
-                try {
-                    rotateOnClick(target);
-                } catch (error) {
-                    console.error('[spline] interaction init failed', error);
-                }
+                rotateOnClick(target);
             } else {
                 console.error(`[spline] "${TARGET_NAME}" not found; click rotation is disabled.`);
             }
@@ -653,59 +386,4 @@
         }).catch((error) => {
             console.error('[spline] failed to load scene', error);
         });
-    </script>
-    <script>
-        (function (w, d, s, o, f, js, fjs) {
-            w[o] = w[o] || function () { (w[o].q = w[o].q || []).push(arguments); };
-            js = d.createElement(s);
-            fjs = d.getElementsByTagName(s)[0];
-            js.id = o;
-            js.src = f;
-            js.async = 1;
-            fjs.parentNode.insertBefore(js, fjs);
-        }(window, document, 'script', 'oursvp', 'https://www.oursvp.app/widget/widget.js'));
-
-        oursvp('init', {
-            element: document.getElementById('rsvp-widget'),
-            eventId: '7ve6uq43AknI0wLathOd',
-            showBackBtn: true,
-            language: 'english'
-        });
-
-        // Hide only the specific helper sentence inside the RSVP widget.
-        const RSVP_HELPER_TEXT = "If you're responding for you and a guest (or your family), you'll be able to RSVP for your entire group.";
-        function hideRsvpHelperText() {
-            const root = document.getElementById('rsvp-widget');
-            if (!root) {
-                return;
-            }
-            const nodes = root.querySelectorAll('p, span, div, small, label');
-            nodes.forEach((node) => {
-                const text = node.textContent ? node.textContent.trim() : '';
-                if (text === RSVP_HELPER_TEXT) {
-                    node.style.display = 'none';
-                }
-            });
-        }
-
-        // The widget renders asynchronously, so watch for updates.
-        const rsvpObserver = new MutationObserver(() => {
-            hideRsvpHelperText();
-        });
-        rsvpObserver.observe(document.getElementById('rsvp-widget'), {
-            childList: true,
-            subtree: true
-        });
-        hideRsvpHelperText();
-
-        // RSVP styling variables (kept consistent with index.html)
-        document.body.style.setProperty('--bg-color', 'transparent');
-        document.body.style.setProperty('--border-color', '#FFF8A8');
-        document.body.style.setProperty('--button-bg-color', '#2e6bff');
-        document.body.style.setProperty('--heading-color', '#FFF8A8');
-        document.body.style.setProperty('--text-color', '#FFF8A8');
-        document.body.style.setProperty('--accent-color', '#FFF8A8');
-        document.body.style.setProperty('--button-text-color', '#FFF8A8');
-    </script>
-</body>
-</html>
+    
