@@ -485,6 +485,8 @@
             let dragStartX = 0;
             let dragStartAngle = 0;
             let dragDeltaX = 0;
+            let dragMoveRaf = null;
+            let pendingDragX = 0;
             let sectionScaleValues = Array.from({ length: SECTION_COUNT }, (_, index) =>
                 index === currentSectionIndex ? ACTIVE_SECTION_SCALE : INACTIVE_SECTION_SCALE
             );
@@ -688,9 +690,16 @@
                     if (!dragging) {
                         return;
                     }
-                    dragDeltaX = event.clientX - dragStartX;
-                    currentAngle = dragStartAngle + dragDeltaX * MOBILE_DRAG_RADIANS_PER_PIXEL;
-                    target.rotation.y = baseY + currentAngle;
+                    pendingDragX = event.clientX;
+                    if (dragMoveRaf !== null) {
+                        return;
+                    }
+                    dragMoveRaf = requestAnimationFrame(() => {
+                        dragDeltaX = pendingDragX - dragStartX;
+                        currentAngle = dragStartAngle + dragDeltaX * MOBILE_DRAG_RADIANS_PER_PIXEL;
+                        target.rotation.y = baseY + currentAngle;
+                        dragMoveRaf = null;
+                    });
                     return;
                 }
 
@@ -764,6 +773,10 @@
                 }
 
                 dragging = false;
+                if (dragMoveRaf !== null) {
+                    cancelAnimationFrame(dragMoveRaf);
+                    dragMoveRaf = null;
+                }
                 fromAngle = currentAngle;
                 targetAngle = Math.round(currentAngle / quarterTurn) * quarterTurn;
                 startTime = null;
@@ -784,6 +797,10 @@
             }, { capture: true });
             window.addEventListener('pointercancel', () => {
                 dragging = false;
+                if (dragMoveRaf !== null) {
+                    cancelAnimationFrame(dragMoveRaf);
+                    dragMoveRaf = null;
+                }
             }, { capture: true });
             window.addEventListener('pointerleave', () => {
                 canvas.style.cursor = '';
