@@ -27,6 +27,7 @@
             display: block;
             width: 100vw;
             height: 100vh;
+            touch-action: none;
         }
 
         #content {
@@ -252,6 +253,13 @@
             color: #000000 !important;
             -webkit-text-fill-color: #000000 !important;
         }
+
+        /* Mobile-only mode: show only the 3D scene. */
+        @media (max-width: 768px) {
+            #content {
+                display: none !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -359,6 +367,8 @@
         // Left side click: +90deg, right side click: -90deg.
         const ROTATION_STEP_LEFT = Math.PI / 2;
         const ROTATION_STEP_RIGHT = -Math.PI / 2;
+        const MOBILE_BREAKPOINT = 768;
+        const MOBILE_DRAG_RADIANS_PER_PIXEL = 0.012;
         const SECTION_COUNT = 4;
         const ROTATION_DURATION = 1000;
         const TARGET_NAME = 'Origin';
@@ -372,10 +382,12 @@
             { r: 10, g: 25, b: 25 }    // section 4: darker green
         ];
         const CURSOR_SIZE = 35;
-        // Shift the whole scene left in world space while keeping a full-screen canvas.
+        // Desktop framing offsets.
         const MODEL_OFFSET_X = -660;
-        // Move the whole scene up in world space.
         const MODEL_OFFSET_Y = 300;
+        // Mobile framing offsets: centered horizontally, biased into upper screen area.
+        const MODEL_OFFSET_X_MOBILE = -320;
+        const MODEL_OFFSET_Y_MOBILE = 430;
 
         const params = new URLSearchParams(window.location.search);
         const DEBUG = params.has('debug');
@@ -461,10 +473,15 @@
             let transitionRaf2 = null;
             let sectionScaleFrame = null;
             let backgroundFrame = null;
+            let dragging = false;
+            let dragStartX = 0;
+            let dragStartAngle = 0;
+            let dragDeltaX = 0;
             let sectionScaleValues = Array.from({ length: SECTION_COUNT }, (_, index) =>
                 index === currentSectionIndex ? ACTIVE_SECTION_SCALE : INACTIVE_SECTION_SCALE
             );
             let currentBackgroundColor = { ...SECTION_BACKGROUND_COLORS[currentSectionIndex] };
+            const isMobileViewport = () => window.innerWidth <= MOBILE_BREAKPOINT;
 
             function applySectionObjectScales(scales) {
                 sectionObjects.forEach((object, index) => {
@@ -657,6 +674,16 @@
             }
 
             function updateCursor(event) {
+                if (isMobileViewport()) {
+                    if (!dragging) {
+                        return;
+                    }
+                    dragDeltaX = event.clientX - dragStartX;
+                    currentAngle = dragStartAngle + dragDeltaX * MOBILE_DRAG_RADIANS_PER_PIXEL;
+                    target.rotation.y = baseY + currentAngle;
+                    return;
+                }
+
                 const contentRect = content.getBoundingClientRect();
                 const isInsideContent =
                     event.clientX >= contentRect.left &&
@@ -675,6 +702,18 @@
 
             // Capture phase, so the click still counts if Spline handles it first.
             window.addEventListener('pointerdown', (event) => {
+                if (isMobileViewport()) {
+                    if (frame !== null) {
+                        cancelAnimationFrame(frame);
+                        frame = null;
+                    }
+                    dragging = true;
+                    dragStartX = event.clientX;
+                    dragStartAngle = currentAngle;
+                    dragDeltaX = 0;
+                    return;
+                }
+
                 const contentRect = content.getBoundingClientRect();
                 const isInsideContent =
                     event.clientX >= contentRect.left &&
@@ -709,6 +748,29 @@
             }, { capture: true });
 
             window.addEventListener('pointermove', updateCursor, { capture: true });
+            window.addEventListener('pointerup', () => {
+                if (!dragging) {
+                    return;
+                }
+
+                dragging = false;
+                fromAngle = currentAngle;
+                targetAngle = Math.round(currentAngle / quarterTurn) * quarterTurn;
+                startTime = null;
+                frame = requestAnimationFrame(tick);
+
+                const direction = dragDeltaX < 0 ? 'clockwise' : 'counterclockwise';
+                const turns = Math.round(targetAngle / quarterTurn);
+                const sectionIndex = normalizeSectionIndex(-turns);
+                setActiveSection(sectionIndex, direction);
+
+                if (DEBUG) {
+                    console.log(`[spline] swipe -> ${(targetAngle * 180 / Math.PI).toFixed(1)}deg section ${sectionIndex + 1}`);
+                }
+            }, { capture: true });
+            window.addEventListener('pointercancel', () => {
+                dragging = false;
+            }, { capture: true });
             window.addEventListener('pointerleave', () => {
                 canvas.style.cursor = '';
             }, { capture: true });
@@ -723,8 +785,19 @@
             const target = spline.get(TARGET_NAME);
 
             if (target) {
-                target.position.x += MODEL_OFFSET_X;
-                target.position.y += MODEL_OFFSET_Y;
+                const authoredPosition = {
+                    x: target.position.x,
+                    y: target.position.y
+                };
+
+                function applyModelPositionForViewport() {
+                    const mobile = window.innerWidth <= MOBILE_BREAKPOINT;
+                    target.position.x = authoredPosition.x + (mobile ? MODEL_OFFSET_X_MOBILE : MODEL_OFFSET_X);
+                    target.position.y = authoredPosition.y + (mobile ? MODEL_OFFSET_Y_MOBILE : MODEL_OFFSET_Y);
+                }
+
+                applyModelPositionForViewport();
+                window.addEventListener('resize', applyModelPositionForViewport);
                 try {
                     rotateOnClick(target);
                 } catch (error) {
