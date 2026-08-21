@@ -91,6 +91,15 @@
             position: relative;
         }
 
+        #content p.spacer-after {
+            margin-bottom: 2rem;
+        }
+
+        #content p.blank-line {
+            margin: 0 0 1.2rem 10px;
+            line-height: 1;
+        }
+
         .content-section.is-animating {
             transition: opacity var(--section-duration) ease-in-out, transform var(--section-duration) ease-in-out;
         }
@@ -168,6 +177,44 @@
             color: #BFFFCB;
         }
 
+        #content .section-four-content a {
+            color: #E6FFEA !important;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        /* Travel two-column layout (matched to index.html) */
+        .section-two-content .two-column {
+            display: flex;
+            gap: 60px;
+            width: 100%;
+            margin-top: 2rem;
+            margin-left: 10px;
+        }
+
+        .section-two-content .two-column .column {
+            flex: 1;
+        }
+
+        #content .section-two-content .two-column h2 {
+            margin-left: 0;
+            margin-bottom: 1rem;
+        }
+
+        .section-two-content .two-column ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .section-two-content .two-column li {
+            font-family: 'Raleway', sans-serif;
+            font-weight: 300;
+            font-size: 1.2rem;
+            line-height: 2;
+            color: inherit;
+        }
+
         #rsvp-widget {
             width: 100%;
             max-width: 500px;
@@ -220,12 +267,12 @@
             <div id="rsvp-widget"></div>
         </section>
         <section class="content-section section-two-content" data-section-index="1">
-            <h1>Dress Code</h1>
+            <h1>DRESS CODE</h1>
             <h2>Formal Attire · Black Tie Optional</h2>
             <h2>Black &amp; White Palette</h2>
-            <h1>Registry</h1>
+            <h1>REGISTRY</h1>
             <p>Instead of a gift registry, we invite guests to participate in the Taiwanese tradition of <a class="registry-bright-link" href="https://en.wikipedia.org/wiki/Red_envelope" target="_blank">Red Envelopes (紅包)</a>. Your presence truly means the most, and any contribution is warmly appreciated.</p>
-            <h1>Travel</h1>
+            <h1>TRAVEL</h1>
             <p>As this is a destination wedding in Taiwan during new years, we suggest booking your hotel and flights early. 
                 Below are some recommendations. (You can also book an <a href="https://www.airbnb.com/a/stays/Taipei--Taiwan" target="_blank">Airbnb</a>)</p>
             
@@ -253,10 +300,53 @@
             </div>
         </section>
         <section class="content-section section-three-content" data-section-index="2">
-            <h1>Content Area 3</h1>
+            <h1>THUR 12.31.2026</h1>
+            <h2>NYE Countdown Party</h2>
+            <p>9:00 PM · Babylon Taipei · 巴比倫</p>
+            <p class="blank-line">&nbsp;</p>
+            <h1>FRI 01.01.2027</h1>
+            <h2>Rehearsal Dinner</h2>
+            <p>7:00 PM · Mountain and Sea House · 山海樓</p>
+            <p class="blank-line">&nbsp;</p>
+            <h1>SAT 01.02.2027</h1>
+            <h2>Wedding Day</h2>
+            <p>3:30 PM · Brickyard 33 · 美軍俱樂部</p>
+            <p class="blank-line">&nbsp;</p>
+            <h2>Wedding Ceremony</h2>
+            <p>4:15 PM · The Pond</p>
+            <p class="blank-line">&nbsp;</p>
+            <h2>Cocktails Reception</h2>
+            <p>4:45 PM · Outdoors Area</p>
+            <p class="blank-line">&nbsp;</p>
+            <h2>Dinner Reception</h2>
+            <p>5:15 PM · Dining Hall</p>
+            <p class="blank-line">&nbsp;</p>
+            <h2>After Party</h2>
+            <p>7:30 PM · Bravo</p>
+            <p class="blank-line">&nbsp;</p>
+            <h1>SUN 01.03.2027</h1>
+            <h2>Farewell Brunch</h2>
+            <p>11:00 AM · Plum Blossom Room · 梅花廳</p>
+            <p class="blank-line">&nbsp;</p>
         </section>
         <section class="content-section section-four-content" data-section-index="3">
-            <h1>Content Area 4</h1>
+            <h1>FREQUENTLY ASKED QUESTIONS</h1>
+            <h2>Can I bring a plus-one?</h2>
+            <p>To keep the celebration intimate and personal, we’re only able to invite the guests on the guestlist. If your plus-one is invited, a separate invitation is sent to them.</p>
+            <h2>Can I bring children?</h2>
+            <p>While we love your little ones, attendance at the wedding will be adults-only, with the exception of children of family members. For parents who are traveling with children, we will organize a day care service for you.</p>
+            <h2>Can dietary restrictions be accommodated?</h2>
+            <p>Per venue and catering guidelines, we may have limited ability to accommodate specific dietary restrictions. However, there will be a vegetarian option available. Please indicate your meal preference in the RSVP.</p>
+            <h2>Do I need a visa to enter Taiwan?</h2>
+            <p>It depends on your passport. Most guests (USA, Canadian, EU, UK, and Australian passports) can enter Taiwan visa-free for up to 90 days. Some nationalities do need to apply for a visa in advance, so it’s best to double-check <a href="https://www.boca.gov.tw/cp-149-4486-7785a-2.html" target="_blank">this website</a> before booking flights.</p>
+            <h2>How do I get to the city from the airport (and back)?</h2>
+            <p>We highly recommend taking the <a href="https://www.travel.taipei/en/information/taoyuanmetro" target="_blank">Taoyuan Airport MRT.</a> It’s a high speed transit that takes you directly from the Airport to Taipei Main Station within 40 minutes, and costs about $5 USD. Alternatively there are also Taxis and Ubers you can take.</p>
+            <h2>How do I get to the venue?</h2>
+            <p>There are limited parking spaces at the venue. We will provide more details on transportation closer to the wedding date.</p>
+            <h2>Is English widely spoken?</h2>
+            <p>Yes! Hotels, restaurants, and MRT stations offer bilingual signage. Locals are friendly, and with Uber, Google Maps, and English menus in many places, navigating the city is easy.</p>
+            <h2>A note for members of the Hickner family</h2>
+            <p>For members of the Hickner family who can’t make the trip to Taiwan, we’re planning to host a casual gathering in Michigan at a later date so we can spend time together and mark the occasion.</p>
         </section>
     </main>
 
