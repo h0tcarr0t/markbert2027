@@ -373,8 +373,7 @@
         const ROTATION_DURATION = 1000;
         const TARGET_NAME = 'Origin';
         const SECTION_OBJECT_NAMES = ['Section1', 'Section2', 'Section3', 'Section4'];
-        const ACTIVE_SECTION_SCALE = 1;
-        const INACTIVE_SECTION_SCALE = 0;
+        const SECTION_OBJECT_SCALE = 1;
         const SECTION_BACKGROUND_COLORS = [
             { r: 25, g: 0, b: 30 },   // section 1: dark purple
             { r: 15, g: 15, b: 15 },   // section 2: dark grey
@@ -387,17 +386,19 @@
         const MODEL_OFFSET_Y = 300;
         const MODEL_SCALE_DESKTOP = 1;
 
-        // Mobile base framing: fixed world transform that fits the whole model
-        // on screen. Everything responsive is handled in screen space below.
+        // Mobile base framing: fixed world transform, applied to the model itself.
+        // Apparent size on screen is MOBILE_BASE_SCALE * MOBILE_ZOOM, so magnifying
+        // here rather than via MOBILE_ZOOM keeps the canvas (and its pixel cost) small.
         const MOBILE_BASE_OFFSET_X = -120;
         const MOBILE_BASE_OFFSET_Y = 220;
-        const MOBILE_BASE_SCALE = 0.62;
+        const MOBILE_BASE_SCALE = 1.91;
 
         // Mobile screen-space framing. The canvas is rendered larger than the
         // viewport and shifted, so the model's apparent size and position are
         // exact fractions of the phone screen regardless of device size.
-        // MOBILE_ZOOM: how much bigger the model renders vs the base framing.
-        const MOBILE_ZOOM = 3.08;
+        // MOBILE_ZOOM only needs to be large enough to give the off-centre shift
+        // somewhere to render into; magnification comes from MOBILE_BASE_SCALE.
+        const MOBILE_ZOOM = 2;
         // Where the model centre sits inside the base framing (0..1 of canvas).
         const MOBILE_BASE_CENTRE_X = 0.5;
         const MOBILE_BASE_CENTRE_Y = 0.47;
@@ -519,60 +520,22 @@
             let cleanupTimer = null;
             let transitionRaf1 = null;
             let transitionRaf2 = null;
-            let sectionScaleFrame = null;
             let backgroundFrame = null;
             let swipeTracking = false;
             let swipeStartX = 0;
             let swipeStartY = 0;
-            let sectionScaleValues = Array.from({ length: SECTION_COUNT }, (_, index) =>
-                index === currentSectionIndex ? ACTIVE_SECTION_SCALE : INACTIVE_SECTION_SCALE
-            );
             let currentBackgroundColor = { ...SECTION_BACKGROUND_COLORS[currentSectionIndex] };
             const isMobileViewport = () => window.innerWidth <= MOBILE_BREAKPOINT;
 
-            function applySectionObjectScales(scales) {
-                sectionObjects.forEach((object, index) => {
+            function applySectionObjectScales() {
+                sectionObjects.forEach((object) => {
                     if (!object || !object.scale) {
                         return;
                     }
-                    const value = scales[index];
-                    object.scale.x = value;
-                    object.scale.y = value;
-                    object.scale.z = value;
+                    object.scale.x = SECTION_OBJECT_SCALE;
+                    object.scale.y = SECTION_OBJECT_SCALE;
+                    object.scale.z = SECTION_OBJECT_SCALE;
                 });
-            }
-
-            function animateSectionObjectScales(nextSectionIndex) {
-                if (sectionScaleFrame !== null) {
-                    cancelAnimationFrame(sectionScaleFrame);
-                }
-
-                const from = sectionScaleValues.slice();
-                const to = Array.from({ length: SECTION_COUNT }, (_, index) =>
-                    index === nextSectionIndex ? ACTIVE_SECTION_SCALE : INACTIVE_SECTION_SCALE
-                );
-                let scaleStart = null;
-
-                function scaleTick(now) {
-                    if (scaleStart === null) {
-                        scaleStart = now;
-                    }
-                    const t = Math.min((now - scaleStart) / ROTATION_DURATION, 1);
-                    const eased = easeInOut(t);
-                    sectionScaleValues = from.map((startValue, index) => {
-                        const targetValue = to[index];
-                        return startValue + (targetValue - startValue) * eased;
-                    });
-                    applySectionObjectScales(sectionScaleValues);
-
-                    if (t < 1) {
-                        sectionScaleFrame = requestAnimationFrame(scaleTick);
-                    } else {
-                        sectionScaleFrame = null;
-                    }
-                }
-
-                sectionScaleFrame = requestAnimationFrame(scaleTick);
             }
 
             function setBackgroundColor(color) {
@@ -627,7 +590,7 @@
                 backgroundFrame = requestAnimationFrame(bgTick);
             }
 
-            applySectionObjectScales(sectionScaleValues);
+            applySectionObjectScales();
             setBackgroundColor(currentBackgroundColor);
 
             function tick(now) {
@@ -716,10 +679,7 @@
                 }, ROTATION_DURATION + 20);
 
                 currentSectionIndex = sectionIndex;
-                if (!isMobileViewport()) {
-                    animateSectionObjectScales(currentSectionIndex);
-                    animateBackgroundColor(currentSectionIndex);
-                }
+                animateBackgroundColor(currentSectionIndex);
             }
 
             function updateCursor(event) {
