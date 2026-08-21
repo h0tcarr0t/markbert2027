@@ -385,17 +385,26 @@
         // Desktop framing offsets.
         const MODEL_OFFSET_X = -660;
         const MODEL_OFFSET_Y = 300;
-        // Mobile framing is computed from viewport so it scales across phones:
-        // center of model anchored to left screen edge, and model enlarged so
-        // approximately half is visible (right side filling the screen width).
-        const MOBILE_OFFSET_Y_BASE = 220;
-        const MOBILE_WORLD_UNITS_PER_PX = 0.62;
         const MODEL_SCALE_DESKTOP = 1;
-        const MODEL_SCALE_MOBILE_BASE = 0.62;
-        const MOBILE_SCALE_MIN = 0.48;
-        const MOBILE_SCALE_MAX = 0.72;
-        const MOBILE_REFERENCE_WIDTH = 390;
-        const MOBILE_REFERENCE_HEIGHT = 844;
+
+        // Mobile base framing: fixed world transform that fits the whole model
+        // on screen. Everything responsive is handled in screen space below.
+        const MOBILE_BASE_OFFSET_X = -120;
+        const MOBILE_BASE_OFFSET_Y = 220;
+        const MOBILE_BASE_SCALE = 0.62;
+
+        // Mobile screen-space framing. The canvas is rendered larger than the
+        // viewport and shifted, so the model's apparent size and position are
+        // exact fractions of the phone screen regardless of device size.
+        // MOBILE_ZOOM: how much bigger the model renders vs the base framing.
+        const MOBILE_ZOOM = 2.2;
+        // Where the model centre sits inside the base framing (0..1 of canvas).
+        const MOBILE_BASE_CENTRE_X = 0.5;
+        const MOBILE_BASE_CENTRE_Y = 0.47;
+        // Where the model centre should land on screen (0..1 of viewport).
+        // 0 puts the centre exactly on the left edge, so only the right half shows.
+        const MOBILE_TARGET_CENTRE_X = 0;
+        const MOBILE_TARGET_CENTRE_Y = 0.46;
 
         const params = new URLSearchParams(window.location.search);
         const DEBUG = params.has('debug');
@@ -408,6 +417,33 @@
 
         const canvas = document.getElementById('spline-canvas');
         const app = new Application(canvas);
+
+        // Renders the scene into a canvas larger than the viewport and offsets it,
+        // so the model's on-screen size and centre are exact fractions of the
+        // phone screen. This is measured in pixels rather than world units, so it
+        // stays correct on any device size.
+        function applyCanvasFraming(mobile) {
+            if (!mobile) {
+                canvas.style.width = '';
+                canvas.style.height = '';
+                canvas.style.left = '';
+                canvas.style.top = '';
+                return;
+            }
+
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            const canvasWidth = viewportWidth * MOBILE_ZOOM;
+            const canvasHeight = viewportHeight * MOBILE_ZOOM;
+
+            const centreInCanvasX = canvasWidth * MOBILE_BASE_CENTRE_X;
+            const centreInCanvasY = canvasHeight * MOBILE_BASE_CENTRE_Y;
+
+            canvas.style.width = `${canvasWidth}px`;
+            canvas.style.height = `${canvasHeight}px`;
+            canvas.style.left = `${viewportWidth * MOBILE_TARGET_CENTRE_X - centreInCanvasX}px`;
+            canvas.style.top = `${viewportHeight * MOBILE_TARGET_CENTRE_Y - centreInCanvasY}px`;
+        }
         const leftArrowCursor = `url("data:image/svg+xml;utf8,${encodeURIComponent(`
             <svg xmlns='http://www.w3.org/2000/svg' width='${CURSOR_SIZE}' height='${CURSOR_SIZE}' viewBox='0 0 32 32'>
                 <path d='M6 16L14 8V13H26V19H14V24Z' fill='black' stroke='white' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'/>
@@ -801,24 +837,21 @@
 
                 function applyModelPositionForViewport() {
                     const mobile = window.innerWidth <= MOBILE_BREAKPOINT;
-                    const mobileOffsetX = -0.5 * window.innerWidth * MOBILE_WORLD_UNITS_PER_PX;
-                    const mobileOffsetY = MOBILE_OFFSET_Y_BASE * (window.innerHeight / MOBILE_REFERENCE_HEIGHT);
-                    target.position.x = authoredPosition.x + (mobile ? mobileOffsetX : MODEL_OFFSET_X);
-                    target.position.y = authoredPosition.y + (mobile ? mobileOffsetY : MODEL_OFFSET_Y);
-                    const widthFit = window.innerWidth / MOBILE_REFERENCE_WIDTH;
-                    const heightFit = window.innerHeight / MOBILE_REFERENCE_HEIGHT;
-                    const mobileScale = Math.min(
-                        MOBILE_SCALE_MAX,
-                        Math.max(MOBILE_SCALE_MIN, MODEL_SCALE_MOBILE_BASE * Math.min(widthFit, heightFit))
-                    );
-                    const scale = mobile ? mobileScale : MODEL_SCALE_DESKTOP;
+
+                    target.position.x = authoredPosition.x + (mobile ? MOBILE_BASE_OFFSET_X : MODEL_OFFSET_X);
+                    target.position.y = authoredPosition.y + (mobile ? MOBILE_BASE_OFFSET_Y : MODEL_OFFSET_Y);
+
+                    const scale = mobile ? MOBILE_BASE_SCALE : MODEL_SCALE_DESKTOP;
                     target.scale.x = authoredScale.x * scale;
                     target.scale.y = authoredScale.y * scale;
                     target.scale.z = authoredScale.z * scale;
+
+                    applyCanvasFraming(mobile);
                 }
 
                 applyModelPositionForViewport();
                 window.addEventListener('resize', applyModelPositionForViewport);
+                window.addEventListener('orientationchange', applyModelPositionForViewport);
                 try {
                     rotateOnClick(target);
                 } catch (error) {
