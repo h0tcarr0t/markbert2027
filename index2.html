@@ -388,8 +388,8 @@
         // Mobile framing is computed from viewport so it scales across phones:
         // center of model anchored to left screen edge, and model enlarged so
         // approximately half is visible (right side filling the screen width).
-        const MOBILE_OFFSET_Y_BASE = 260;
-        const MOBILE_WORLD_UNITS_PER_PX = 1.12;
+        const MOBILE_OFFSET_Y_BASE = 220;
+        const MOBILE_WORLD_UNITS_PER_PX = 0.62;
         const MODEL_SCALE_DESKTOP = 1;
         const MODEL_SCALE_MOBILE_BASE = 0.62;
         const MOBILE_SCALE_MIN = 0.48;
@@ -763,9 +763,8 @@
                     return;
                 }
 
-                // Swipe-left behaves like desktop "left-side click", swipe-right
-                // behaves like desktop "right-side click".
-                const step = deltaX < 0 ? ROTATION_STEP_LEFT : ROTATION_STEP_RIGHT;
+                // Swipe direction: left swipe -> rotate right, right swipe -> rotate left.
+                const step = deltaX < 0 ? ROTATION_STEP_RIGHT : ROTATION_STEP_LEFT;
                 const direction = step < 0 ? 'clockwise' : 'counterclockwise';
                 const sectionIndex = runStepRotation(step, direction);
 
@@ -812,9 +811,7 @@
                         MOBILE_SCALE_MAX,
                         Math.max(MOBILE_SCALE_MIN, MODEL_SCALE_MOBILE_BASE * Math.min(widthFit, heightFit))
                     );
-                    // Show approximately half of the model width on mobile by
-                    // doubling fit scale relative to full-width framing.
-                    const scale = mobile ? mobileScale * 2 : MODEL_SCALE_DESKTOP;
+                    const scale = mobile ? mobileScale : MODEL_SCALE_DESKTOP;
                     target.scale.x = authoredScale.x * scale;
                     target.scale.y = authoredScale.y * scale;
                     target.scale.z = authoredScale.z * scale;
