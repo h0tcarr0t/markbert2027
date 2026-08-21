@@ -373,7 +373,11 @@
         const ROTATION_DURATION = 1000;
         const TARGET_NAME = 'Origin';
         const SECTION_OBJECT_NAMES = ['Section1', 'Section2', 'Section3', 'Section4'];
-        const SECTION_OBJECT_SCALE = 1;
+        // Desktop hides inactive section text by scaling it away; mobile leaves
+        // every section object at full scale permanently.
+        const ACTIVE_SECTION_SCALE = 1;
+        const INACTIVE_SECTION_SCALE = 0;
+        const MOBILE_SECTION_SCALE = 1;
         const SECTION_BACKGROUND_COLORS = [
             { r: 25, g: 0, b: 30 },   // section 1: dark purple
             { r: 15, g: 15, b: 15 },   // section 2: dark grey
@@ -519,22 +523,78 @@
             let cleanupTimer = null;
             let transitionRaf1 = null;
             let transitionRaf2 = null;
+            let sectionScaleFrame = null;
             let backgroundFrame = null;
             let swipeTracking = false;
             let swipeStartX = 0;
             let swipeStartY = 0;
+            let sectionScaleValues = restingSectionScales(currentSectionIndex);
             let currentBackgroundColor = { ...SECTION_BACKGROUND_COLORS[currentSectionIndex] };
             const isMobileViewport = () => window.innerWidth <= MOBILE_BREAKPOINT;
 
-            function applySectionObjectScales() {
-                sectionObjects.forEach((object) => {
+            function restingSectionScales(sectionIndex) {
+                return Array.from({ length: SECTION_COUNT }, (_, index) => {
+                    if (window.innerWidth <= MOBILE_BREAKPOINT) {
+                        return MOBILE_SECTION_SCALE;
+                    }
+                    return index === sectionIndex ? ACTIVE_SECTION_SCALE : INACTIVE_SECTION_SCALE;
+                });
+            }
+
+            function applySectionObjectScales(scales) {
+                sectionObjects.forEach((object, index) => {
                     if (!object || !object.scale) {
                         return;
                     }
-                    object.scale.x = SECTION_OBJECT_SCALE;
-                    object.scale.y = SECTION_OBJECT_SCALE;
-                    object.scale.z = SECTION_OBJECT_SCALE;
+                    const value = scales[index];
+                    object.scale.x = value;
+                    object.scale.y = value;
+                    object.scale.z = value;
                 });
+            }
+
+            function animateSectionObjectScales(nextSectionIndex) {
+                if (sectionScaleFrame !== null) {
+                    cancelAnimationFrame(sectionScaleFrame);
+                }
+
+                const from = sectionScaleValues.slice();
+                const to = Array.from({ length: SECTION_COUNT }, (_, index) =>
+                    index === nextSectionIndex ? ACTIVE_SECTION_SCALE : INACTIVE_SECTION_SCALE
+                );
+                let scaleStart = null;
+
+                function scaleTick(now) {
+                    if (scaleStart === null) {
+                        scaleStart = now;
+                    }
+                    const t = Math.min((now - scaleStart) / ROTATION_DURATION, 1);
+                    const eased = easeOut(t);
+                    sectionScaleValues = from.map((startValue, index) => {
+                        const targetValue = to[index];
+                        return startValue + (targetValue - startValue) * eased;
+                    });
+                    applySectionObjectScales(sectionScaleValues);
+
+                    if (t < 1) {
+                        sectionScaleFrame = requestAnimationFrame(scaleTick);
+                    } else {
+                        sectionScaleFrame = null;
+                    }
+                }
+
+                sectionScaleFrame = requestAnimationFrame(scaleTick);
+            }
+
+            // Crossing the breakpoint has to reset the scales, otherwise a desktop
+            // layout keeps three sections stuck at 0 after shrinking to mobile.
+            function syncSectionObjectScalesToViewport() {
+                if (sectionScaleFrame !== null) {
+                    cancelAnimationFrame(sectionScaleFrame);
+                    sectionScaleFrame = null;
+                }
+                sectionScaleValues = restingSectionScales(currentSectionIndex);
+                applySectionObjectScales(sectionScaleValues);
             }
 
             function setBackgroundColor(color) {
@@ -589,8 +649,9 @@
                 backgroundFrame = requestAnimationFrame(bgTick);
             }
 
-            applySectionObjectScales();
+            applySectionObjectScales(sectionScaleValues);
             setBackgroundColor(currentBackgroundColor);
+            window.addEventListener('resize', syncSectionObjectScalesToViewport);
 
             function tick(now) {
                 if (startTime === null) {
@@ -678,6 +739,9 @@
                 }, ROTATION_DURATION + 20);
 
                 currentSectionIndex = sectionIndex;
+                if (!isMobileViewport()) {
+                    animateSectionObjectScales(currentSectionIndex);
+                }
                 animateBackgroundColor(currentSectionIndex);
             }
 
