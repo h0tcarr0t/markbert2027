@@ -386,10 +386,14 @@
         const MODEL_OFFSET_X = -660;
         const MODEL_OFFSET_Y = 300;
         // Mobile framing offsets: centered horizontally, biased into upper screen area.
-        const MODEL_OFFSET_X_MOBILE = -320;
-        const MODEL_OFFSET_Y_MOBILE = 430;
+        const MODEL_OFFSET_X_MOBILE = -280;
+        const MODEL_OFFSET_Y_MOBILE = 260;
         const MODEL_SCALE_DESKTOP = 1;
-        const MODEL_SCALE_MOBILE = 0.72;
+        const MODEL_SCALE_MOBILE_BASE = 0.62;
+        const MOBILE_SCALE_MIN = 0.48;
+        const MOBILE_SCALE_MAX = 0.72;
+        const MOBILE_REFERENCE_WIDTH = 390;
+        const MOBILE_REFERENCE_HEIGHT = 844;
 
         const params = new URLSearchParams(window.location.search);
         const DEBUG = params.has('debug');
@@ -801,7 +805,13 @@
                     const mobile = window.innerWidth <= MOBILE_BREAKPOINT;
                     target.position.x = authoredPosition.x + (mobile ? MODEL_OFFSET_X_MOBILE : MODEL_OFFSET_X);
                     target.position.y = authoredPosition.y + (mobile ? MODEL_OFFSET_Y_MOBILE : MODEL_OFFSET_Y);
-                    const scale = mobile ? MODEL_SCALE_MOBILE : MODEL_SCALE_DESKTOP;
+                    const widthFit = window.innerWidth / MOBILE_REFERENCE_WIDTH;
+                    const heightFit = window.innerHeight / MOBILE_REFERENCE_HEIGHT;
+                    const mobileScale = Math.min(
+                        MOBILE_SCALE_MAX,
+                        Math.max(MOBILE_SCALE_MIN, MODEL_SCALE_MOBILE_BASE * Math.min(widthFit, heightFit))
+                    );
+                    const scale = mobile ? mobileScale : MODEL_SCALE_DESKTOP;
                     target.scale.x = authoredScale.x * scale;
                     target.scale.y = authoredScale.y * scale;
                     target.scale.z = authoredScale.z * scale;
