@@ -677,8 +677,10 @@
                 }, ROTATION_DURATION + 20);
 
                 currentSectionIndex = sectionIndex;
-                animateSectionObjectScales(currentSectionIndex);
-                animateBackgroundColor(currentSectionIndex);
+                if (!isMobileViewport()) {
+                    animateSectionObjectScales(currentSectionIndex);
+                    animateBackgroundColor(currentSectionIndex);
+                }
             }
 
             function updateCursor(event) {
@@ -767,13 +769,17 @@
                 startTime = null;
                 frame = requestAnimationFrame(tick);
 
-                const direction = dragDeltaX < 0 ? 'clockwise' : 'counterclockwise';
-                const turns = Math.round(targetAngle / quarterTurn);
-                const sectionIndex = normalizeSectionIndex(-turns);
-                setActiveSection(sectionIndex, direction);
+                if (!isMobileViewport()) {
+                    const direction = dragDeltaX < 0 ? 'clockwise' : 'counterclockwise';
+                    const turns = Math.round(targetAngle / quarterTurn);
+                    const sectionIndex = normalizeSectionIndex(-turns);
+                    setActiveSection(sectionIndex, direction);
 
-                if (DEBUG) {
-                    console.log(`[spline] swipe -> ${(targetAngle * 180 / Math.PI).toFixed(1)}deg section ${sectionIndex + 1}`);
+                    if (DEBUG) {
+                        console.log(`[spline] swipe -> ${(targetAngle * 180 / Math.PI).toFixed(1)}deg section ${sectionIndex + 1}`);
+                    }
+                } else if (DEBUG) {
+                    console.log(`[spline] mobile swipe -> ${(targetAngle * 180 / Math.PI).toFixed(1)}deg`);
                 }
             }, { capture: true });
             window.addEventListener('pointercancel', () => {
