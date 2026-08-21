@@ -102,7 +102,7 @@
         }
 
         .content-section.is-animating {
-            transition: opacity var(--section-duration) ease-in-out, transform var(--section-duration) ease-in-out;
+            transition: opacity var(--section-duration) cubic-bezier(0.215, 0.61, 0.355, 1), transform var(--section-duration) cubic-bezier(0.215, 0.61, 0.355, 1);
         }
 
         .content-section.is-active {
@@ -398,7 +398,7 @@
         // viewport and shifted, so the model's apparent size and position are
         // exact fractions of the phone screen regardless of device size.
         // MOBILE_ZOOM: how much bigger the model renders vs the base framing.
-        const MOBILE_ZOOM = 3.08;
+        const MOBILE_ZOOM = 3.7;
         // Where the model centre sits inside the base framing (0..1 of canvas).
         const MOBILE_BASE_CENTRE_X = 0.5;
         const MOBILE_BASE_CENTRE_Y = 0.47;
@@ -413,10 +413,9 @@
         const params = new URLSearchParams(window.location.search);
         const DEBUG = params.has('debug');
 
-        function easeInOut(t) {
-            return t < 0.5
-                ? 4 * t * t * t
-                : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        // Leaves at full speed and decelerates into the stop.
+        function easeOut(t) {
+            return 1 - Math.pow(1 - t, 3);
         }
 
         const canvas = document.getElementById('spline-canvas');
@@ -572,7 +571,7 @@
                         bgStart = now;
                     }
                     const t = Math.min((now - bgStart) / ROTATION_DURATION, 1);
-                    const eased = easeInOut(t);
+                    const eased = easeOut(t);
                     currentBackgroundColor = {
                         r: from.r + (to.r - from.r) * eased,
                         g: from.g + (to.g - from.g) * eased,
@@ -600,7 +599,7 @@
 
                 const t = Math.min((now - startTime) / ROTATION_DURATION, 1);
 
-                currentAngle = fromAngle + (targetAngle - fromAngle) * easeInOut(t);
+                currentAngle = fromAngle + (targetAngle - fromAngle) * easeOut(t);
                 target.rotation.y = baseY + currentAngle;
 
                 if (t < 1) {
