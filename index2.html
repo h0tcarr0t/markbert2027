@@ -397,7 +397,7 @@
         // viewport and shifted, so the model's apparent size and position are
         // exact fractions of the phone screen regardless of device size.
         // MOBILE_ZOOM: how much bigger the model renders vs the base framing.
-        const MOBILE_ZOOM = 2.2;
+        const MOBILE_ZOOM = 3.08;
         // Where the model centre sits inside the base framing (0..1 of canvas).
         const MOBILE_BASE_CENTRE_X = 0.5;
         const MOBILE_BASE_CENTRE_Y = 0.47;
@@ -405,6 +405,9 @@
         // 0 puts the centre exactly on the left edge, so only the right half shows.
         const MOBILE_TARGET_CENTRE_X = 0;
         const MOBILE_TARGET_CENTRE_Y = 0.46;
+        // Extra pixel nudge applied after the ratio-based placement above.
+        const MOBILE_TARGET_NUDGE_X = 40;
+        const MOBILE_TARGET_NUDGE_Y = 0;
 
         const params = new URLSearchParams(window.location.search);
         const DEBUG = params.has('debug');
@@ -441,9 +444,10 @@
 
             canvas.style.width = `${canvasWidth}px`;
             canvas.style.height = `${canvasHeight}px`;
-            canvas.style.left = `${viewportWidth * MOBILE_TARGET_CENTRE_X - centreInCanvasX}px`;
-            canvas.style.top = `${viewportHeight * MOBILE_TARGET_CENTRE_Y - centreInCanvasY}px`;
+            canvas.style.left = `${viewportWidth * MOBILE_TARGET_CENTRE_X - centreInCanvasX + MOBILE_TARGET_NUDGE_X}px`;
+            canvas.style.top = `${viewportHeight * MOBILE_TARGET_CENTRE_Y - centreInCanvasY + MOBILE_TARGET_NUDGE_Y}px`;
         }
+
         const leftArrowCursor = `url("data:image/svg+xml;utf8,${encodeURIComponent(`
             <svg xmlns='http://www.w3.org/2000/svg' width='${CURSOR_SIZE}' height='${CURSOR_SIZE}' viewBox='0 0 32 32'>
                 <path d='M6 16L14 8V13H26V19H14V24Z' fill='black' stroke='white' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'/>
