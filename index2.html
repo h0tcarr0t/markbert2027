@@ -388,6 +388,8 @@
         // Mobile framing offsets: centered horizontally, biased into upper screen area.
         const MODEL_OFFSET_X_MOBILE = -320;
         const MODEL_OFFSET_Y_MOBILE = 430;
+        const MODEL_SCALE_DESKTOP = 1;
+        const MODEL_SCALE_MOBILE = 0.72;
 
         const params = new URLSearchParams(window.location.search);
         const DEBUG = params.has('debug');
@@ -789,11 +791,20 @@
                     x: target.position.x,
                     y: target.position.y
                 };
+                const authoredScale = {
+                    x: target.scale.x,
+                    y: target.scale.y,
+                    z: target.scale.z
+                };
 
                 function applyModelPositionForViewport() {
                     const mobile = window.innerWidth <= MOBILE_BREAKPOINT;
                     target.position.x = authoredPosition.x + (mobile ? MODEL_OFFSET_X_MOBILE : MODEL_OFFSET_X);
                     target.position.y = authoredPosition.y + (mobile ? MODEL_OFFSET_Y_MOBILE : MODEL_OFFSET_Y);
+                    const scale = mobile ? MODEL_SCALE_MOBILE : MODEL_SCALE_DESKTOP;
+                    target.scale.x = authoredScale.x * scale;
+                    target.scale.y = authoredScale.y * scale;
+                    target.scale.z = authoredScale.z * scale;
                 }
 
                 applyModelPositionForViewport();
