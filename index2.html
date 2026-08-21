@@ -386,8 +386,10 @@
         const MODEL_OFFSET_X = -660;
         const MODEL_OFFSET_Y = 300;
         // Mobile framing offsets: centered horizontally, biased into upper screen area.
-        const MODEL_OFFSET_X_MOBILE = -220;
         const MODEL_OFFSET_Y_MOBILE = 260;
+        // Mobile horizontal centering uses viewport-width-based offset,
+        // so different iPhone sizes stay visually centered.
+        const MOBILE_CENTER_X_RATIO = -0.28;
         const MODEL_SCALE_DESKTOP = 1;
         const MODEL_SCALE_MOBILE_BASE = 0.62;
         const MOBILE_SCALE_MIN = 0.48;
@@ -803,7 +805,8 @@
 
                 function applyModelPositionForViewport() {
                     const mobile = window.innerWidth <= MOBILE_BREAKPOINT;
-                    target.position.x = authoredPosition.x + (mobile ? MODEL_OFFSET_X_MOBILE : MODEL_OFFSET_X);
+                    const mobileOffsetX = window.innerWidth * MOBILE_CENTER_X_RATIO;
+                    target.position.x = authoredPosition.x + (mobile ? mobileOffsetX : MODEL_OFFSET_X);
                     target.position.y = authoredPosition.y + (mobile ? MODEL_OFFSET_Y_MOBILE : MODEL_OFFSET_Y);
                     const widthFit = window.innerWidth / MOBILE_REFERENCE_WIDTH;
                     const heightFit = window.innerHeight / MOBILE_REFERENCE_HEIGHT;
