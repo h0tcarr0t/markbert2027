@@ -459,6 +459,20 @@
             return 1 - Math.pow(1 - t, 3);
         }
 
+        // The canvas is already twice the width of the screen, so at the phone's native
+        // 3x ratio it renders more than twice the pixels of 2x. Desktop is untouched.
+        const MOBILE_MAX_PIXEL_RATIO = 2;
+        const nativePixelRatio = window.devicePixelRatio || 1;
+
+        Object.defineProperty(window, 'devicePixelRatio', {
+            configurable: true,
+            get() {
+                return window.innerWidth <= MOBILE_BREAKPOINT
+                    ? Math.min(nativePixelRatio, MOBILE_MAX_PIXEL_RATIO)
+                    : nativePixelRatio;
+            }
+        });
+
         const canvas = document.getElementById('spline-canvas');
         const app = new Application(canvas);
 
@@ -557,6 +571,8 @@
             // benefit, and sustained load is what makes iOS throttle. Set to false if
             // the canvas ever goes blank while idle.
             const PAUSE_RENDER_WHEN_IDLE = true;
+            // Zero-based, so this is section 1.
+            const ALWAYS_RENDER_SECTION_INDEX = 0;
             const canPauseRender =
                 typeof app.play === 'function' && typeof app.stop === 'function';
             let renderPaused = false;
@@ -575,6 +591,10 @@
                 }
                 // Only on phones, and only once every animation has finished.
                 if (!isMobileViewport() || frame !== null || backgroundFrame !== null) {
+                    return;
+                }
+                // Section 1 has a scene animation that has to keep running.
+                if (currentSectionIndex === ALWAYS_RENDER_SECTION_INDEX) {
                     return;
                 }
                 app.stop();
