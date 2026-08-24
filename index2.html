@@ -647,11 +647,16 @@
                 };
             }
 
+            // Scoped to the widget rather than <body>: a custom property on body is
+            // inherited document-wide, so rewriting it every animation frame forces a
+            // style invalidation across the whole page. Only the widget reads these.
+            const rsvpVariableRoot = document.getElementById('rsvp-widget') || document.body;
+
             function setRsvpButtonColor(color) {
                 const brighter = brightenColor(color, 0.1);
                 const rgb = `rgb(${Math.round(brighter.r)}, ${Math.round(brighter.g)}, ${Math.round(brighter.b)})`;
-                document.body.style.setProperty('--rsvp-cta-color', rgb);
-                document.body.style.setProperty('--button-bg-color', rgb);
+                rsvpVariableRoot.style.setProperty('--rsvp-cta-color', rgb);
+                rsvpVariableRoot.style.setProperty('--button-bg-color', rgb);
             }
 
             function animateBackgroundColor(nextSectionIndex) {
@@ -713,6 +718,14 @@
 
             function setActiveSection(sectionIndex, direction) {
                 if (sectionIndex === currentSectionIndex) {
+                    return;
+                }
+
+                // #content is display:none on mobile, so the class churn and the
+                // forced layout below cost time for something nobody can see.
+                if (isMobileViewport()) {
+                    currentSectionIndex = sectionIndex;
+                    animateBackgroundColor(currentSectionIndex);
                     return;
                 }
 
@@ -852,7 +865,7 @@
             }, { capture: true });
 
             window.addEventListener('pointermove', updateCursor, { capture: true });
-            window.addEventListener('pointerup', () => {
+            window.addEventListener('pointerup', (event) => {
                 if (!swipeTracking) {
                     return;
                 }
@@ -942,57 +955,66 @@
         });
     </script>
     <script>
-        (function (w, d, s, o, f, js, fjs) {
-            w[o] = w[o] || function () { (w[o].q = w[o].q || []).push(arguments); };
-            js = d.createElement(s);
-            fjs = d.getElementsByTagName(s)[0];
-            js.id = o;
-            js.src = f;
-            js.async = 1;
-            fjs.parentNode.insertBefore(js, fjs);
-        }(window, document, 'script', 'oursvp', 'https://www.oursvp.app/widget/widget.js'));
+        // Mobile hides #content entirely today, so the widget would download and build
+        // a DOM nobody can see. Flip this to true once the phone layout has an RSVP
+        // section. Breakpoint must match MOBILE_BREAKPOINT; this classic script runs
+        // before the module, so the constant is not in scope here.
+        const ENABLE_RSVP_ON_MOBILE = false;
+        const RSVP_MOBILE_BREAKPOINT = 768;
 
-        oursvp('init', {
-            element: document.getElementById('rsvp-widget'),
-            eventId: '7ve6uq43AknI0wLathOd',
-            showBackBtn: true,
-            language: 'english'
-        });
+        if (ENABLE_RSVP_ON_MOBILE || window.innerWidth > RSVP_MOBILE_BREAKPOINT) {
+            (function (w, d, s, o, f, js, fjs) {
+                w[o] = w[o] || function () { (w[o].q = w[o].q || []).push(arguments); };
+                js = d.createElement(s);
+                fjs = d.getElementsByTagName(s)[0];
+                js.id = o;
+                js.src = f;
+                js.async = 1;
+                fjs.parentNode.insertBefore(js, fjs);
+            }(window, document, 'script', 'oursvp', 'https://www.oursvp.app/widget/widget.js'));
 
-        // Hide only the specific helper sentence inside the RSVP widget.
-        const RSVP_HELPER_TEXT = "If you're responding for you and a guest (or your family), you'll be able to RSVP for your entire group.";
-        function hideRsvpHelperText() {
-            const root = document.getElementById('rsvp-widget');
-            if (!root) {
-                return;
-            }
-            const nodes = root.querySelectorAll('p, span, div, small, label');
-            nodes.forEach((node) => {
-                const text = node.textContent ? node.textContent.trim() : '';
-                if (text === RSVP_HELPER_TEXT) {
-                    node.style.display = 'none';
-                }
+            oursvp('init', {
+                element: document.getElementById('rsvp-widget'),
+                eventId: '7ve6uq43AknI0wLathOd',
+                showBackBtn: true,
+                language: 'english'
             });
-        }
 
-        // The widget renders asynchronously, so watch for updates.
-        const rsvpObserver = new MutationObserver(() => {
+            // Hide only the specific helper sentence inside the RSVP widget.
+            const RSVP_HELPER_TEXT = "If you're responding for you and a guest (or your family), you'll be able to RSVP for your entire group.";
+            const hideRsvpHelperText = () => {
+                const root = document.getElementById('rsvp-widget');
+                if (!root) {
+                    return;
+                }
+                const nodes = root.querySelectorAll('p, span, div, small, label');
+                nodes.forEach((node) => {
+                    const text = node.textContent ? node.textContent.trim() : '';
+                    if (text === RSVP_HELPER_TEXT) {
+                        node.style.display = 'none';
+                    }
+                });
+            };
+
+            // The widget renders asynchronously, so watch for updates.
+            const rsvpObserver = new MutationObserver(() => {
+                hideRsvpHelperText();
+            });
+            rsvpObserver.observe(document.getElementById('rsvp-widget'), {
+                childList: true,
+                subtree: true
+            });
             hideRsvpHelperText();
-        });
-        rsvpObserver.observe(document.getElementById('rsvp-widget'), {
-            childList: true,
-            subtree: true
-        });
-        hideRsvpHelperText();
 
-        // RSVP styling variables (kept consistent with index.html)
-        document.body.style.setProperty('--bg-color', 'transparent');
-        document.body.style.setProperty('--border-color', '#FFF8A8');
-        document.body.style.setProperty('--button-bg-color', '#2e6bff');
-        document.body.style.setProperty('--heading-color', '#FFF8A8');
-        document.body.style.setProperty('--text-color', '#FFF8A8');
-        document.body.style.setProperty('--accent-color', '#FFF8A8');
-        document.body.style.setProperty('--button-text-color', '#FFF8A8');
+            // RSVP styling variables (kept consistent with index.html)
+            document.body.style.setProperty('--bg-color', 'transparent');
+            document.body.style.setProperty('--border-color', '#FFF8A8');
+            document.body.style.setProperty('--button-bg-color', '#2e6bff');
+            document.body.style.setProperty('--heading-color', '#FFF8A8');
+            document.body.style.setProperty('--text-color', '#FFF8A8');
+            document.body.style.setProperty('--accent-color', '#FFF8A8');
+            document.body.style.setProperty('--button-text-color', '#FFF8A8');
+        }
     </script>
 </body>
 </html>
