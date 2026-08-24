@@ -254,16 +254,40 @@
             -webkit-text-fill-color: #000000 !important;
         }
 
+        #swipe-hint {
+            display: none;
+        }
+
         /* Mobile-only mode: show only the 3D scene. */
         @media (max-width: 768px) {
             #content {
                 display: none !important;
+            }
+
+            #swipe-hint {
+                display: block;
+                position: fixed;
+                left: 0;
+                right: 0;
+                bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+                margin: 0;
+                padding: 0 16px;
+                text-align: center;
+                font-family: 'Raleway', sans-serif;
+                font-weight: 300;
+                font-size: 1.2rem;
+                line-height: 1.5;
+                color: #FFFFFF;
+                opacity: 0.5;
+                /* Must not swallow swipes aimed at the model behind it. */
+                pointer-events: none;
             }
         }
     </style>
 </head>
 <body>
     <canvas id="spline-canvas"></canvas>
+    <p id="swipe-hint">swipe &#8592; &#8594; for sections, &#8593; &#8595; for details</p>
     <main id="content">
         <section class="content-section is-active wedding-details" data-section-index="0">
             <h1>01.02.2027</h1>
