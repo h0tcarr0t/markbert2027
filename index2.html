@@ -361,7 +361,10 @@
     <script type="module">
         import { Application } from 'https://unpkg.com/@splinetool/runtime@1.12.18/build/runtime.js';
 
-        const SCENE = 'https://prod.spline.design/C1BUyPU9yQdApM7J/scene.splinecode';
+        // Separate exports so the mobile scene can be framed independently. Only the
+        // one matching the viewport is fetched.
+        const DESKTOP_SCENE = 'https://prod.spline.design/C1BUyPU9yQdApM7J/scene.splinecode';
+        const MOBILE_SCENE = 'https://prod.spline.design/izNtHqnbzyxd3ly6/scene.splinecode';
 
         // Rotation applied per click side, in radians.
         // Left side click: +90deg, right side click: -90deg.
@@ -393,7 +396,7 @@
         // Mobile base framing: fixed world transform that fits the whole model
         // on screen. Everything responsive is handled in screen space below.
         // Changing the scale here is not a linear change in on-screen size, so
-        // resize via MOBILE_ZOOM instead and leave this alone.
+        // resize via MOBILE_ZOOM_X instead and leave this alone.
         const MOBILE_BASE_OFFSET_X = -120;
         const MOBILE_BASE_OFFSET_Y = 220;
         const MOBILE_BASE_SCALE = 0.62;
@@ -401,14 +404,18 @@
         // Mobile screen-space framing. The canvas is rendered larger than the
         // viewport and shifted, so the model's apparent size and position are
         // exact fractions of the phone screen regardless of device size.
-        // MOBILE_ZOOM is kept at the minimum that still lets the model centre sit on
-        // the left edge with the canvas covering the screen (half the canvas width
-        // must reach across the viewport, so 2x, plus a rounding margin). It renders
-        // at the phone's native pixel ratio, so the result is pixel-sharp. Raising it
-        // magnifies the model but the buffer grows with the square, and past roughly
-        // 3x iOS Safari refuses the allocation and kills the tab. Zoom the camera in
-        // Spline instead: that costs no pixels and stays sharp.
-        const MOBILE_ZOOM = 2.05;
+        // MOBILE_ZOOM_X is the minimum that still lets the model centre sit on the left
+        // edge with the canvas covering the screen (half the canvas width must reach
+        // across the viewport, so 2x, plus a rounding margin). It renders at the phone's
+        // native pixel ratio, so the result is pixel-sharp. Raising it magnifies the
+        // model, but past roughly 3x iOS Safari refuses the allocation and kills the tab.
+        const MOBILE_ZOOM_X = 2.05;
+        // The scene is fitted to the narrower of the two canvas dimensions, which on a
+        // portrait phone is the width, so height buys no magnification and only costs
+        // pixels. This is just enough to cover the screen once the offset is applied.
+        // If the model comes out smaller, height is binding after all: set this to
+        // MOBILE_ZOOM_X to undo.
+        const MOBILE_ZOOM_Y = 1.2;
         // Where the model centre sits inside the base framing (0..1 of canvas).
         const MOBILE_BASE_CENTRE_X = 0.5;
         const MOBILE_BASE_CENTRE_Y = 0.47;
@@ -417,8 +424,9 @@
         const MOBILE_TARGET_CENTRE_X = 0;
         const MOBILE_TARGET_CENTRE_Y = 0.46;
         // Extra pixel nudge applied after the ratio-based placement above.
-        const MOBILE_TARGET_NUDGE_X = 40;
-        const MOBILE_TARGET_NUDGE_Y = 0;
+        const MOBILE_TARGET_NUDGE_X = 60;
+        const MOBILE_TARGET_NUDGE_Y = 10;
+
         const params = new URLSearchParams(window.location.search);
         const DEBUG = params.has('debug');
 
@@ -445,8 +453,8 @@
 
             const viewportWidth = window.innerWidth;
             const viewportHeight = window.innerHeight;
-            const canvasWidth = viewportWidth * MOBILE_ZOOM;
-            const canvasHeight = viewportHeight * MOBILE_ZOOM;
+            const canvasWidth = viewportWidth * MOBILE_ZOOM_X;
+            const canvasHeight = viewportHeight * MOBILE_ZOOM_Y;
 
             const centreInCanvasX = canvasWidth * MOBILE_BASE_CENTRE_X;
             const centreInCanvasY = canvasHeight * MOBILE_BASE_CENTRE_Y;
@@ -751,6 +759,12 @@
             }
 
             function updateCursor(event) {
+                // There is no cursor on a phone, and getBoundingClientRect forces a
+                // layout on every touch move, which is enough to make swipes stutter.
+                if (isMobileViewport()) {
+                    return;
+                }
+
                 const contentRect = content.getBoundingClientRect();
                 const isInsideContent =
                     event.clientX >= contentRect.left &&
@@ -851,7 +865,7 @@
         // Always use the exact export URL from Spline.
         // Appending cache-buster query params can cause invalid responses
         // with newer Spline CDN behavior.
-        const sceneUrl = SCENE;
+        const sceneUrl = window.innerWidth <= MOBILE_BREAKPOINT ? MOBILE_SCENE : DESKTOP_SCENE;
 
         app.load(sceneUrl).then(() => {
             const target = spline.get(TARGET_NAME);
