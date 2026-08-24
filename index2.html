@@ -551,6 +551,36 @@
                 currentSectionIndex = 0;
             }
 
+            const fullTurn = Math.PI * 2;
+            // Between swipes nothing moves, but the runtime keeps redrawing the whole
+            // canvas every frame. On a phone that is a constant GPU load for no visible
+            // benefit, and sustained load is what makes iOS throttle. Set to false if
+            // the canvas ever goes blank while idle.
+            const PAUSE_RENDER_WHEN_IDLE = true;
+            const canPauseRender =
+                typeof app.play === 'function' && typeof app.stop === 'function';
+            let renderPaused = false;
+
+            function resumeRender() {
+                if (!canPauseRender || !renderPaused) {
+                    return;
+                }
+                app.play();
+                renderPaused = false;
+            }
+
+            function pauseRenderIfIdle() {
+                if (!PAUSE_RENDER_WHEN_IDLE || !canPauseRender || renderPaused) {
+                    return;
+                }
+                // Only on phones, and only once every animation has finished.
+                if (!isMobileViewport() || frame !== null || backgroundFrame !== null) {
+                    return;
+                }
+                app.stop();
+                renderPaused = true;
+            }
+
             // Keep an absolute target angle so rapid clicks queue smoothly.
             let targetAngle = 0;
             let fromAngle = 0;
@@ -685,6 +715,7 @@
                         backgroundFrame = requestAnimationFrame(bgTick);
                     } else {
                         backgroundFrame = null;
+                        pauseRenderIfIdle();
                     }
                 }
 
@@ -694,6 +725,8 @@
             applySectionObjectScales(sectionScaleValues);
             setBackgroundColor(currentBackgroundColor);
             window.addEventListener('resize', syncSectionObjectScalesToViewport);
+            // Let the first frames settle before going idle.
+            window.setTimeout(pauseRenderIfIdle, 1500);
 
             function tick(now) {
                 if (startTime === null) {
@@ -707,9 +740,23 @@
 
                 if (t < 1) {
                     frame = requestAnimationFrame(tick);
-                } else {
-                    frame = null;
+                    return;
                 }
+
+                frame = null;
+
+                // The angle would otherwise grow without bound across a session.
+                // Whole turns are 4 quarter turns, so the section index is unaffected.
+                const turns = Math.trunc(currentAngle / fullTurn);
+                if (turns !== 0) {
+                    const wrap = turns * fullTurn;
+                    currentAngle -= wrap;
+                    targetAngle -= wrap;
+                    fromAngle -= wrap;
+                    target.rotation.y = baseY + currentAngle;
+                }
+
+                pauseRenderIfIdle();
             }
 
             function normalizeSectionIndex(turns) {
@@ -819,6 +866,7 @@
             }
 
             function runStepRotation(step, direction) {
+                resumeRender();
                 targetAngle += step;
                 const turns = Math.round(targetAngle / quarterTurn);
                 const sectionIndex = normalizeSectionIndex(-turns);
