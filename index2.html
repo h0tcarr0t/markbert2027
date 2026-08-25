@@ -270,6 +270,14 @@
                 height: auto;
                 min-height: 100%;
                 overflow: visible;
+
+                /* Depth of the black band held against the bottom of the screen.
+                   Safari tints its address bar from the page's colour at that edge,
+                   and it only re-reads that colour once it stops changing, so a
+                   strip that cross-fades can never be matched. A band that never
+                   changes can. Shared by the band and by the strip above it, which
+                   has to clear it. Deepen this if the bar does not follow. */
+                --chrome-band: 24px;
             }
 
             /* The runtime binds its own touch handlers to the canvas and calls
@@ -399,17 +407,22 @@
                 font-size: var(--m-p) !important;
             }
 
-            /* Held off the bottom of the screen, so the only thing it can be seen
-               through is Safari's address bar. Separate from the strip because the
-               strip fades away with the model view and this must not: the bar is
-               meant to read black wherever the reader is on the page. */
+            /* Sits against the bottom of the screen and carries on past it, so it
+               is both the colour Safari samples and what fills the space under the
+               address bar. Kept out of the strip because the strip fades away with
+               the model view and this must not: the bar is meant to read black
+               wherever the reader is on the page. */
             #chrome-shade {
+                /* Runs well past the bottom edge, so nothing of it stops short of
+                   the screen as the address bar comes and goes. */
+                --shade-bleed: 200px;
+
                 display: block;
                 position: fixed;
                 left: 0;
                 right: 0;
-                bottom: -200px;
-                height: 200px;
+                bottom: calc(var(--shade-bleed) * -1);
+                height: calc(var(--chrome-band) + var(--shade-bleed));
                 z-index: 4;
                 background: #000000;
                 pointer-events: none;
@@ -423,9 +436,11 @@
                 --peek-pad: 7px;
                 /* Safari reports no bottom inset while its address bar is showing,
                    since the bar already clears the home indicator. So the inset is
-                   only worth honouring for whatever exceeds the padding, which is
-                   the case where that bar is hidden and the indicator is exposed. */
-                --peek-safe: max(0px, env(safe-area-inset-bottom, 0px) - var(--peek-pad));
+                   only worth honouring for whatever the band and padding do not
+                   already cover, which is the case where that bar is hidden and the
+                   indicator is exposed. */
+                --peek-safe: max(0px, env(safe-area-inset-bottom, 0px)
+                                      - var(--peek-pad) - var(--chrome-band));
                 /* Runs the strip well past the bottom edge, so nothing of it stops
                    short of the screen while the address bar comes and goes. */
                 --peek-bleed: 160px;
@@ -439,8 +454,12 @@
                 align-items: center;
                 justify-content: center;
                 overflow: hidden;
+                /* The band is opaque and sits on top, so the strip is padded clear
+                   of it: the hint stays centred in the colour that remains visible
+                   rather than in the strip's full height. */
                 padding: var(--peek-pad) 16px
-                         calc(var(--peek-bleed) + var(--peek-pad) + var(--peek-safe));
+                         calc(var(--peek-bleed) + var(--chrome-band)
+                              + var(--peek-pad) + var(--peek-safe));
                 /* Must not swallow swipes aimed at the model behind it. */
                 pointer-events: none;
             }
