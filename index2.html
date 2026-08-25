@@ -258,7 +258,8 @@
         }
 
         #model-spacer,
-        #peek {
+        #peek,
+        #chrome-shade {
             display: none;
         }
 
@@ -398,6 +399,22 @@
                 font-size: var(--m-p) !important;
             }
 
+            /* Held off the bottom of the screen, so the only thing it can be seen
+               through is Safari's address bar. Separate from the strip because the
+               strip fades away with the model view and this must not: the bar is
+               meant to read black wherever the reader is on the page. */
+            #chrome-shade {
+                display: block;
+                position: fixed;
+                left: 0;
+                right: 0;
+                bottom: -200px;
+                height: 200px;
+                z-index: 4;
+                background: #000000;
+                pointer-events: none;
+            }
+
             /* A sliver of the reading background pinned below the model, deep
                enough to contain the hint. Both fade out as the content rises. */
             #peek {
@@ -409,8 +426,8 @@
                    only worth honouring for whatever exceeds the padding, which is
                    the case where that bar is hidden and the indicator is exposed. */
                 --peek-safe: max(0px, env(safe-area-inset-bottom, 0px) - var(--peek-pad));
-                /* Runs the strip well past the bottom edge, so it is also what sits
-                   behind the address bar rather than stopping short of it. */
+                /* Runs the strip well past the bottom edge, so nothing of it stops
+                   short of the screen while the address bar comes and goes. */
                 --peek-bleed: 160px;
 
                 display: flex;
@@ -559,6 +576,8 @@
         <div class="peek-fill" aria-hidden="true"></div>
         <p id="swipe-hint">swipe &#8592; &#8594; for sections, &#8593;&#8595; for details</p>
     </div>
+    <!-- Sits entirely off the bottom of the screen, under Safari's address bar. -->
+    <div id="chrome-shade" aria-hidden="true"></div>
 
     <script type="module">
         import { Application } from 'https://unpkg.com/@splinetool/runtime@1.12.18/build/runtime.js';
@@ -1443,13 +1462,11 @@
                 canvas.style.cursor = '';
             }, { capture: true });
 
-            // Rendering a model nobody can see costs frame rate the scroll needs,
-            // so it stops once the content has covered it and starts again the
-            // moment any part of it is back on screen.
-            // Pausing is only safe if the scene can be restarted, so treat a
-            // runtime missing either half as one that cannot be paused at all.
-            const canPauseRender = typeof app.stop === 'function' && typeof app.play === 'function';
-            let renderPaused = false;
+            // The runtime is deliberately never stopped while the content covers the
+            // model. Stopping it saves the frames spent drawing something nobody can
+            // see, but it also halts the scene's own animations, and play() does not
+            // put back the ones that were running. Coming back to a still model is
+            // worse than the cost of having kept it turning.
             let scrollFrame = null;
             // Cached because reading it forces a layout, and this runs per scroll
             // frame. svh does not track the URL bar, so a resize is the only thing
@@ -1460,47 +1477,11 @@
                 modelHeight = spacer && spacer.offsetHeight ? spacer.offsetHeight : window.innerHeight;
             }
 
-            function setRenderPaused(paused) {
-                if (!canPauseRender || paused === renderPaused) {
-                    return;
-                }
-                if (paused) {
-                    app.stop();
-                } else {
-                    app.play();
-                }
-                renderPaused = paused;
-            }
-
             // Set while the content is on its way up, so arriving at the top of an
             // animation that started at the top is not mistaken for a return to it.
             let contentOpening = false;
-            // Starts true so a fresh load is not treated as a return, which would
-            // restart the scene's animations on top of the ones already running.
+            // Starts true so a fresh load is not treated as a return to the model.
             let wasAtModel = true;
-
-            // Stopping the runtime stops the scene's own animations too, and play()
-            // only restarts the render loop: anything that had been triggered stays
-            // where it was left. Re-emitting the event that started them is what
-            // brings them back. Objects with nothing bound to 'start' ignore it.
-            function restartSceneAnimations() {
-                if (typeof app.emitEvent !== 'function' || typeof app.getAllObjects !== 'function') {
-                    return;
-                }
-                app.getAllObjects().forEach((object) => {
-                    const id = object && (object.id || object.name);
-                    if (!id) {
-                        return;
-                    }
-                    try {
-                        app.emitEvent('start', id);
-                    } catch (error) {
-                        if (DEBUG) {
-                            console.warn('[spline] could not restart', id, error);
-                        }
-                    }
-                });
-            }
 
             // Safari's address bar is expanded at the top of the page and retracted
             // anywhere below it, so innerHeight on the way back is not what it was
@@ -1509,7 +1490,6 @@
             // resize happens to correct it.
             function returnToModel() {
                 applyCanvasFraming(true);
-                restartSceneAnimations();
             }
 
             function setScrollLocked(locked) {
@@ -1540,7 +1520,6 @@
                         peek.style.opacity = '';
                     }
                     setScrollLocked(false);
-                    setRenderPaused(false);
                     return;
                 }
 
@@ -1559,8 +1538,6 @@
                 if (!contentOpening) {
                     setScrollLocked(atModel);
                 }
-
-                setRenderPaused(scrolled >= modelHeight - 1);
 
                 if (atModel && !wasAtModel) {
                     returnToModel();
