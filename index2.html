@@ -271,20 +271,20 @@
                 min-height: 100%;
                 overflow: visible;
 
-                /* Depth of the black band held against the bottom of the screen.
-                   Safari tints its address bar from the page's colour at that edge,
-                   and it only re-reads that colour once it stops changing, so a
-                   strip that cross-fades can never be matched. A band that never
-                   changes can. Shared by the band and by the strip above it, which
-                   has to clear it.
+                /* Depth of black held against the bottom of the screen, and the room
+                   the strip above leaves for it.
 
-                   Safari averages roughly the bottom 24px to pick the tint, so
-                   anything short of that leaves strip colour inside the window and
-                   pulls the bar towards grey: a full 24px measured rgb(1,1,1), and
-                   4px measured rgb(30,24,28). This sits just under, trading a bar of
-                   about rgb(9,9,9) for 4px less height. Going much below 20px greys
-                   it off quickly. */
-                --chrome-band: 20px;
+                   Zero, because the theme-color meta turns out to be enough on its
+                   own: measured in the reading view, the page meets the bottom edge
+                   at rgb(48,53,72) and the address bar still draws rgb(1,1,1). The
+                   band was added when the bar appeared to be copying the strip, but
+                   that was Safari showing a stale tint rather than sampling. It only
+                   re-reads theme-color on a scroll, and the model view is locked, so
+                   nothing there ever prompted it to look again.
+
+                   Kept as a knob rather than deleted: raise it if a bar ever shows
+                   up tinted, since real black at the edge is the fallback. */
+                --chrome-band: 0px;
             }
 
             /* The runtime binds its own touch handlers to the canvas and calls
@@ -423,11 +423,11 @@
                 font-size: var(--m-p) !important;
             }
 
-            /* Sits against the bottom of the screen and carries on past it, so it
-               is both the colour Safari samples and what fills the space under the
-               address bar. A sibling of the strip rather than a child, so it can be
-               laid over it and sized independently. They fade out together as the
-               content rises. */
+            /* Fills the space under the address bar, and can be brought up over the
+               bottom edge by --chrome-band if the bar ever needs real black beneath
+               it. At a band of zero it lives entirely off screen. A sibling of the
+               strip rather than a child, so it can be laid over it and sized
+               independently. They fade out together as the content rises. */
             #chrome-shade {
                 /* Runs well past the bottom edge, so nothing of it stops short of
                    the screen as the address bar comes and goes. */
