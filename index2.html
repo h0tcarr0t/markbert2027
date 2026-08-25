@@ -268,9 +268,14 @@
                 overflow: visible;
             }
 
-            /* Vertical drags have to scroll the page, which leaves only horizontal
-               ones for the swipe handler to read as a section change. */
+            /* The runtime binds its own touch handlers to the canvas and calls
+               preventDefault in them, which kills the page scroll before it
+               starts; touch-action cannot override that. Mobile reads swipes from
+               window and wants nothing from Spline's own interaction, so the
+               canvas is taken out of hit testing altogether and every touch lands
+               on the document instead. */
             #spline-canvas {
+                pointer-events: none;
                 touch-action: pan-y;
             }
 
