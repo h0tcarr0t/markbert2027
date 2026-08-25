@@ -1044,19 +1044,12 @@
                 const reading = rgbString(brightenColor(color, MOBILE_CONTENT_BRIGHTEN));
                 const mobile = isMobileViewport();
 
-                // With no theme-color meta, Safari tints its address bar from the
-                // page's own background, which is how index.html gets a bar that
-                // matches its sections without any code. Ours could not, because the
-                // colour at the bottom edge came from a fixed overlay while the
-                // document underneath stayed on the darker model colour. So on
-                // mobile the document is given the reading colour too. Nothing can
-                // see it — the canvas covers the model view and the content covers
-                // the rest — it exists to be what Safari samples. Being an ordinary
-                // style change, it also updates when a meta tag would not.
-                const documentColor = mobile ? reading : rgbString(color);
-                document.body.style.backgroundColor = documentColor;
+                // The canvas is transparent, so this is what is seen behind the
+                // model, not just what sits under the page.
+                const behindModel = rgbString(color);
+                document.body.style.backgroundColor = behindModel;
                 // Overscrolling on iOS exposes the root element, not the body.
-                document.documentElement.style.backgroundColor = documentColor;
+                document.documentElement.style.backgroundColor = behindModel;
 
                 // Written straight onto the elements that need it. A custom property
                 // on a shared ancestor would invalidate the whole document's style
