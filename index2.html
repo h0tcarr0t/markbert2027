@@ -284,11 +284,18 @@
                 height: 100vh;
                 height: 100svh;
                 /* Touches over the model land here, now that the canvas is out of
-                   hit testing. Left at auto the browser treats a sideways drag as a
-                   candidate scroll and locks to vertical at the slightest drift;
-                   naming the one axis it may pan leaves the other one to us.
-                   pinch-zoom is spelled out because pan-y alone would drop it. */
+                   hit testing. This is the value once the content is open and the
+                   spacer is just the empty space above it. */
                 touch-action: pan-y pinch-zoom;
+            }
+
+            /* While the model is the view, the page does not scroll at all: the
+               browser gets no say over the gesture, so a sideways drag can never be
+               taken for the start of a scroll, and the model cannot drift with a
+               rubber-band or a retracting URL bar. Leaving this surface is a
+               deliberate swipe up, handled in script. */
+            html.model-locked #model-spacer {
+                touch-action: none;
             }
 
             #content {
@@ -638,6 +645,15 @@
         // Rotating while reading would change the section behind the content
         // silently, so swipes only count while the model is what's on screen.
         const SCROLL_TOP_EPSILON = 4;
+        // Upward travel that counts as a deliberate request for the content. Well
+        // above the sideways threshold, so the model view stays a rotation surface
+        // and only a decided gesture leaves it.
+        const CONTENT_OPEN_SWIPE_PX = 48;
+        // How far one axis must beat the other before a drag is called sideways or
+        // upward. Without it a diagonal satisfies whichever test is read first.
+        const SWIPE_AXIS_BIAS = 1.3;
+        // The pull-up itself is animated; everything after it is the browser's.
+        const CONTENT_OPEN_SETTLE_MS = 900;
 
         // The model is the landing view, so returning to a remembered scroll
         // position would drop the reader into content with no way back in sight.
@@ -933,9 +949,11 @@
             let sectionScaleFrame = null;
             let backgroundFrame = null;
             let swipeTracking = false;
-            // Set once a gesture has already turned into a rotation, so the rest
-            // of the same drag cannot fire a second one.
+            // Set once a gesture has already been resolved, so the rest of the same
+            // drag cannot fire a second rotation or reopen the content.
             let swipeHandled = false;
+            // True whenever the model is the view and the page is held still.
+            let scrollLocked = false;
             let swipeStartX = 0;
             let swipeStartY = 0;
             let sectionScaleValues = restingSectionScales(currentSectionIndex);
@@ -1322,17 +1340,12 @@
                 }
             }, { capture: true });
 
-            // Committed as soon as the gesture is unambiguously sideways, rather
-            // than on release. Once the browser decides a drag is a scroll it takes
-            // the pointer away and sends pointercancel, so a swipe that waits for
-            // release is one the page can confiscate halfway through.
-            function tryHandleSwipe(event) {
-                if (!swipeTracking || swipeHandled || !isMobileViewport()) {
-                    return;
-                }
-                // Only the model view navigates. A horizontal swipe while reading
-                // would rotate to a section the reader cannot see happening.
-                if (window.scrollY > SCROLL_TOP_EPSILON) {
+            // The model view owns the whole gesture: the page is not scrolling, so
+            // nothing can interrupt a drag partway through and there is no reason to
+            // wait for release. Sideways rotates, a decided pull upward hands over
+            // to the content, and everything else is ignored.
+            function tryHandleModelGesture(event) {
+                if (!swipeTracking || swipeHandled || !isMobileViewport() || !scrollLocked) {
                     return;
                 }
 
@@ -1342,24 +1355,28 @@
                 const absY = Math.abs(deltaY);
                 const swipeThresholdPx = Math.max(22, window.innerWidth * 0.045);
 
-                if (absX < swipeThresholdPx || absX <= absY) {
+                if (absX >= swipeThresholdPx && absX > absY * SWIPE_AXIS_BIAS) {
+                    // Swipe direction: left swipe -> rotate right, right -> rotate left.
+                    swipeHandled = true;
+                    const step = deltaX < 0 ? ROTATION_STEP_RIGHT : ROTATION_STEP_LEFT;
+                    const direction = step < 0 ? 'clockwise' : 'counterclockwise';
+                    const sectionIndex = runStepRotation(step, direction);
+
+                    if (DEBUG) {
+                        console.log(`[spline] mobile swipe -> ${(targetAngle * 180 / Math.PI).toFixed(1)}deg section ${sectionIndex + 1}`);
+                    }
                     return;
                 }
 
-                // Swipe direction: left swipe -> rotate right, right swipe -> rotate left.
-                swipeHandled = true;
-                const step = deltaX < 0 ? ROTATION_STEP_RIGHT : ROTATION_STEP_LEFT;
-                const direction = step < 0 ? 'clockwise' : 'counterclockwise';
-                const sectionIndex = runStepRotation(step, direction);
-
-                if (DEBUG) {
-                    console.log(`[spline] mobile swipe -> ${(targetAngle * 180 / Math.PI).toFixed(1)}deg section ${sectionIndex + 1}`);
+                if (deltaY < 0 && absY >= CONTENT_OPEN_SWIPE_PX && absY > absX * SWIPE_AXIS_BIAS) {
+                    swipeHandled = true;
+                    openContent();
                 }
             }
 
             window.addEventListener('pointermove', (event) => {
                 if (isMobileViewport()) {
-                    tryHandleSwipe(event);
+                    tryHandleModelGesture(event);
                     return;
                 }
                 updateCursor(event);
@@ -1368,9 +1385,9 @@
                 if (!swipeTracking) {
                     return;
                 }
-                // Still checked on release, to catch a swipe slow enough that no
-                // single move crossed the threshold.
-                tryHandleSwipe(event);
+                // Still checked on release, to catch a gesture slow enough that no
+                // single move crossed a threshold.
+                tryHandleModelGesture(event);
                 swipeTracking = false;
                 swipeHandled = false;
             }, { capture: true });
@@ -1411,6 +1428,30 @@
                 renderPaused = paused;
             }
 
+            // Set while the content is on its way up, so arriving at the top of an
+            // animation that started at the top is not mistaken for a return to it.
+            let contentOpening = false;
+
+            function setScrollLocked(locked) {
+                if (locked === scrollLocked) {
+                    return;
+                }
+                scrollLocked = locked;
+                document.documentElement.classList.toggle('model-locked', locked);
+            }
+
+            // Answering the deliberate swipe up. The lock comes off first, because
+            // touch-action governs only what a finger may do and would not hold back
+            // a scroll asked for in script.
+            function openContent() {
+                setScrollLocked(false);
+                contentOpening = true;
+                window.scrollTo({ top: modelHeight, behavior: 'smooth' });
+                window.setTimeout(() => {
+                    contentOpening = false;
+                }, CONTENT_OPEN_SETTLE_MS);
+            }
+
             function updateScrollState() {
                 scrollFrame = null;
 
@@ -1418,6 +1459,7 @@
                     if (hint) {
                         hint.style.opacity = '';
                     }
+                    setScrollLocked(false);
                     setRenderPaused(false);
                     return;
                 }
@@ -1429,8 +1471,26 @@
                     hint.style.opacity = String(0.5 * (1 - faded));
                 }
 
+                // Coming back to the model closes the content and locks the page
+                // again, so the next gesture is read as rotation rather than scroll.
+                if (!contentOpening) {
+                    setScrollLocked(scrolled <= SCROLL_TOP_EPSILON);
+                }
+
                 setRenderPaused(scrolled >= modelHeight - 1);
             }
+
+            // touch-action does not apply to a wheel, which would otherwise scroll
+            // straight past a locked model view when testing in a narrow window.
+            window.addEventListener('wheel', (event) => {
+                if (!isMobileViewport() || !scrollLocked) {
+                    return;
+                }
+                event.preventDefault();
+                if (event.deltaY > 12) {
+                    openContent();
+                }
+            }, { passive: false });
 
             window.addEventListener('scroll', () => {
                 if (scrollFrame === null) {
