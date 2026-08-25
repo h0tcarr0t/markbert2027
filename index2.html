@@ -437,6 +437,10 @@
             #swipe-hint {
                 display: block;
                 position: relative;
+                /* Above both fills. They are given explicit z-indexes to say which
+                   one is on top during a cross-fade, so this cannot be left to
+                   paint above them by document order. */
+                z-index: 2;
                 margin: 0;
                 padding: 0;
                 text-align: center;
