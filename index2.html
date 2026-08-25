@@ -278,11 +278,10 @@
                    changes can. Shared by the band and by the strip above it, which
                    has to clear it.
 
-                   How deep this has to be is set by however much of the bottom edge
-                   Safari averages, which is not something a page can ask for. It is
-                   tuned by eye: deepen it if the bar drifts back towards the strip
-                   colour, at the cost of the whole thing standing taller. */
-                --chrome-band: 12px;
+                   Sized to the window Safari averages, which measures at roughly
+                   24px. Falling short of it leaves the strip colour inside that
+                   window and drags the bar back towards grey. */
+                --chrome-band: 24px;
             }
 
             /* The runtime binds its own touch handlers to the canvas and calls
@@ -421,10 +420,17 @@
                 /* Runs well past the bottom edge, so nothing of it stops short of
                    the screen as the address bar comes and goes. */
                 --shade-bleed: 200px;
-                /* Depth of untouched black at the very bottom. The gradient has to
-                   finish before the edge Safari reads, or there would be only a
-                   hairline of true black there to sway the tint. */
-                --shade-solid: 4px;
+                /* Depth of untouched black at the very bottom, and the setting that
+                   decides how black the address bar comes out.
+
+                   Safari appears to average about the bottom 24px when it picks the
+                   tint, so what matters is how much of that window is black rather
+                   than whether the very last pixel is. Measured from screenshots: a
+                   full 24px of black gave rgb(1,1,1), while 4px of black under a
+                   ramp gave rgb(30,24,28), which is the grey the gradient was
+                   visibly running into. At 14px the window averages near black and
+                   the ramp still has room to be seen. */
+                --shade-solid: 14px;
 
                 display: block;
                 position: fixed;
