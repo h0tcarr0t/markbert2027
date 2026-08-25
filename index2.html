@@ -276,8 +276,13 @@
                    and it only re-reads that colour once it stops changing, so a
                    strip that cross-fades can never be matched. A band that never
                    changes can. Shared by the band and by the strip above it, which
-                   has to clear it. Deepen this if the bar does not follow. */
-                --chrome-band: 24px;
+                   has to clear it.
+
+                   How deep this has to be is set by however much of the bottom edge
+                   Safari averages, which is not something a page can ask for. It is
+                   tuned by eye: deepen it if the bar drifts back towards the strip
+                   colour, at the cost of the whole thing standing taller. */
+                --chrome-band: 12px;
             }
 
             /* The runtime binds its own touch handlers to the canvas and calls
@@ -409,13 +414,17 @@
 
             /* Sits against the bottom of the screen and carries on past it, so it
                is both the colour Safari samples and what fills the space under the
-               address bar. Kept out of the strip because the strip fades away with
-               the model view and this must not: the bar is meant to read black
-               wherever the reader is on the page. */
+               address bar. A sibling of the strip rather than a child, so it can be
+               laid over it: the strip has to show through the top of the gradient
+               for the two to read as one. They fade out together. */
             #chrome-shade {
                 /* Runs well past the bottom edge, so nothing of it stops short of
                    the screen as the address bar comes and goes. */
                 --shade-bleed: 200px;
+                /* Depth of untouched black at the very bottom. The gradient has to
+                   finish before the edge Safari reads, or there would be only a
+                   hairline of true black there to sway the tint. */
+                --shade-solid: 4px;
 
                 display: block;
                 position: fixed;
@@ -424,7 +433,15 @@
                 bottom: calc(var(--shade-bleed) * -1);
                 height: calc(var(--chrome-band) + var(--shade-bleed));
                 z-index: 4;
-                background: #000000;
+                /* Transparent at the top, so what it fades out of is the strip
+                   itself, whatever colour that has reached. The cross-fade is
+                   carried for free rather than having to be matched. */
+                background: linear-gradient(
+                    to bottom,
+                    rgba(0, 0, 0, 0) 0,
+                    #000000 calc(var(--chrome-band) - var(--shade-solid)),
+                    #000000 100%
+                );
                 pointer-events: none;
             }
 
@@ -433,7 +450,7 @@
             #peek {
                 /* Space above and below the hint, so it sits centred in the strip
                    by construction. Also what sets how deep the strip is. */
-                --peek-pad: 7px;
+                --peek-pad: 4px;
                 /* Safari reports no bottom inset while its address bar is showing,
                    since the bar already clears the home indicator. So the inset is
                    only worth honouring for whatever the band and padding do not
@@ -486,7 +503,10 @@
                 font-family: 'Raleway', sans-serif;
                 font-weight: 300;
                 font-size: 1.08rem;
-                line-height: 1.5;
+                /* Tight because it is always one line, and the height it gives back
+                   is what lets the strip and the black band together stand no taller
+                   than the strip alone used to. */
+                line-height: 1.2;
                 color: #FFFFFF;
                 opacity: 0.5;
             }
@@ -977,6 +997,7 @@
             const sections = Array.from(content.querySelectorAll('[data-section-index]'));
             const sectionObjects = SECTION_OBJECT_NAMES.map((name) => spline.get(name));
             const peek = document.getElementById('peek');
+            const shade = document.getElementById('chrome-shade');
             const spacer = document.getElementById('model-spacer');
             const peekFills = peek ? Array.from(peek.querySelectorAll('.peek-fill')) : [];
             // The topmost fill, and so the one whose colour is on screen. The other
@@ -1538,16 +1559,23 @@
                     if (peek) {
                         peek.style.opacity = '';
                     }
+                    if (shade) {
+                        shade.style.opacity = '';
+                    }
                     setScrollLocked(false);
                     return;
                 }
 
                 const scrolled = Math.max(window.scrollY, 0);
 
-                // The strip belongs to the model view, so it goes with it. The hint
+                // Both belong to the model view, so they leave with it. The hint
                 // keeps its own opacity and is carried out by its parent.
+                const shown = String(1 - Math.min(scrolled / PEEK_FADE_PX, 1));
                 if (peek) {
-                    peek.style.opacity = String(1 - Math.min(scrolled / PEEK_FADE_PX, 1));
+                    peek.style.opacity = shown;
+                }
+                if (shade) {
+                    shade.style.opacity = shown;
                 }
 
                 const atModel = scrolled <= SCROLL_TOP_EPSILON;
