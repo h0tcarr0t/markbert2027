@@ -283,6 +283,12 @@
                 display: block;
                 height: 100vh;
                 height: 100svh;
+                /* Touches over the model land here, now that the canvas is out of
+                   hit testing. Left at auto the browser treats a sideways drag as a
+                   candidate scroll and locks to vertical at the slightest drift;
+                   naming the one axis it may pan leaves the other one to us.
+                   pinch-zoom is spelled out because pan-y alone would drop it. */
+                touch-action: pan-y pinch-zoom;
             }
 
             #content {
@@ -927,6 +933,9 @@
             let sectionScaleFrame = null;
             let backgroundFrame = null;
             let swipeTracking = false;
+            // Set once a gesture has already turned into a rotation, so the rest
+            // of the same drag cannot fire a second one.
+            let swipeHandled = false;
             let swipeStartX = 0;
             let swipeStartY = 0;
             let sectionScaleValues = restingSectionScales(currentSectionIndex);
@@ -1284,6 +1293,7 @@
             window.addEventListener('pointerdown', (event) => {
                 if (isMobileViewport()) {
                     swipeTracking = true;
+                    swipeHandled = false;
                     swipeStartX = event.clientX;
                     swipeStartY = event.clientY;
                     return;
@@ -1312,13 +1322,12 @@
                 }
             }, { capture: true });
 
-            window.addEventListener('pointermove', updateCursor, { capture: true });
-            window.addEventListener('pointerup', (event) => {
-                if (!swipeTracking) {
-                    return;
-                }
-                swipeTracking = false;
-                if (!isMobileViewport()) {
+            // Committed as soon as the gesture is unambiguously sideways, rather
+            // than on release. Once the browser decides a drag is a scroll it takes
+            // the pointer away and sends pointercancel, so a swipe that waits for
+            // release is one the page can confiscate halfway through.
+            function tryHandleSwipe(event) {
+                if (!swipeTracking || swipeHandled || !isMobileViewport()) {
                     return;
                 }
                 // Only the model view navigates. A horizontal swipe while reading
@@ -1326,16 +1335,19 @@
                 if (window.scrollY > SCROLL_TOP_EPSILON) {
                     return;
                 }
+
                 const deltaX = event.clientX - swipeStartX;
                 const deltaY = event.clientY - swipeStartY;
                 const absX = Math.abs(deltaX);
                 const absY = Math.abs(deltaY);
                 const swipeThresholdPx = Math.max(22, window.innerWidth * 0.045);
+
                 if (absX < swipeThresholdPx || absX <= absY) {
                     return;
                 }
 
                 // Swipe direction: left swipe -> rotate right, right swipe -> rotate left.
+                swipeHandled = true;
                 const step = deltaX < 0 ? ROTATION_STEP_RIGHT : ROTATION_STEP_LEFT;
                 const direction = step < 0 ? 'clockwise' : 'counterclockwise';
                 const sectionIndex = runStepRotation(step, direction);
@@ -1343,9 +1355,28 @@
                 if (DEBUG) {
                     console.log(`[spline] mobile swipe -> ${(targetAngle * 180 / Math.PI).toFixed(1)}deg section ${sectionIndex + 1}`);
                 }
+            }
+
+            window.addEventListener('pointermove', (event) => {
+                if (isMobileViewport()) {
+                    tryHandleSwipe(event);
+                    return;
+                }
+                updateCursor(event);
+            }, { capture: true });
+            window.addEventListener('pointerup', (event) => {
+                if (!swipeTracking) {
+                    return;
+                }
+                // Still checked on release, to catch a swipe slow enough that no
+                // single move crossed the threshold.
+                tryHandleSwipe(event);
+                swipeTracking = false;
+                swipeHandled = false;
             }, { capture: true });
             window.addEventListener('pointercancel', () => {
                 swipeTracking = false;
+                swipeHandled = false;
             }, { capture: true });
             window.addEventListener('pointerleave', () => {
                 canvas.style.cursor = '';
