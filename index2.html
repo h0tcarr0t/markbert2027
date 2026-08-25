@@ -398,16 +398,14 @@
             /* A sliver of the reading background pinned above the model, deep
                enough to contain the hint. It stays put while the hint fades. */
             #peek {
-                /* Space above the hint, which sets how deep the visible strip is. */
-                --peek-pad: 12px;
-                /* Space below the hint, down to the top of Safari's address bar.
-                   Lowering this drops both the hint and the strip's top edge. */
-                --peek-gap: 2px;
+                /* Space above and below the hint, so it sits centred in the strip
+                   by construction. Also what sets how deep the strip is. */
+                --peek-pad: 7px;
                 /* Safari reports no bottom inset while its address bar is showing,
                    since the bar already clears the home indicator. So the inset is
-                   only worth honouring for whatever exceeds the gap, which is the
-                   case where that bar is hidden and the indicator is exposed. */
-                --peek-safe: max(0px, env(safe-area-inset-bottom, 0px) - var(--peek-gap));
+                   only worth honouring for whatever exceeds the padding, which is
+                   the case where that bar is hidden and the indicator is exposed. */
+                --peek-safe: max(0px, env(safe-area-inset-bottom, 0px) - var(--peek-pad));
                 /* Runs the strip well past the bottom edge, so it is also what sits
                    behind the address bar rather than stopping short of it. */
                 --peek-bleed: 160px;
@@ -422,18 +420,18 @@
                 justify-content: center;
                 overflow: hidden;
                 padding: var(--peek-pad) 16px
-                         calc(var(--peek-bleed) + var(--peek-gap) + var(--peek-safe));
+                         calc(var(--peek-bleed) + var(--peek-pad) + var(--peek-safe));
                 /* Must not swallow swipes aimed at the model behind it. */
                 pointer-events: none;
             }
 
-            /* Two layers, so a section change can carry the outgoing colour off
-               one side while the incoming one arrives from the other. */
+            /* Two stacked layers, so a section change can bring the arriving
+               colour up over the departing one. */
             .peek-fill {
                 position: absolute;
                 inset: 0;
                 background: #2c2229;
-                will-change: transform;
+                will-change: opacity;
             }
 
             #swipe-hint {
@@ -937,8 +935,11 @@
             const hint = document.getElementById('swipe-hint');
             const spacer = document.getElementById('model-spacer');
             const peekFills = peek ? Array.from(peek.querySelectorAll('.peek-fill')) : [];
-            // Exactly one fill is ever on screen; the spare waits off to the side.
+            // The topmost fill, and so the one whose colour is on screen. The other
+            // sits beneath it, holding whatever the previous section left there.
             let activePeekFill = 0;
+            let peekFading = false;
+            let peekFadeTimer = null;
             const quarterTurn = Math.PI / 2;
             content.style.setProperty('--section-duration', `${ROTATION_DURATION}ms`);
             let currentSectionIndex = sections.findIndex((section) => section.classList.contains('is-active'));
@@ -1056,45 +1057,62 @@
                 // on every frame of the tween.
                 // Desktop floats its text over the model, so it must stay clear.
                 content.style.backgroundColor = mobile ? reading : '';
-                if (peekFills[activePeekFill]) {
+                // Left alone mid-fade: that layer is holding the colour it is
+                // fading up to, and this tween is still on the way there.
+                if (!peekFading && peekFills[activePeekFill]) {
                     peekFills[activePeekFill].style.backgroundColor = reading;
                 }
 
                 setRsvpButtonColor(color);
             }
 
-            // The strip reads as the leading edge of the section being swiped in,
-            // so it travels with the rotation rather than just changing colour.
-            // The incoming layer starts on the old colour and is carried into the
-            // new one by the background tween already running alongside it.
-            function animatePeek(direction) {
+            // The strip changes section by laying the arriving colour over the
+            // departing one and bringing it up, so the swipe direction does not
+            // read into it: the model's rotation is what carries that.
+            function animatePeek(sectionIndex) {
                 if (peekFills.length < 2) {
                     return;
                 }
 
                 const outgoing = peekFills[activePeekFill];
                 const incoming = peekFills[1 - activePeekFill];
-                // Reads as the strip being dragged along by the swipe: a swipe left
-                // carries the current colour off to the left and pulls the next one
-                // in behind it. This is the opposite of the desktop panels, which
-                // follow the model's rotation rather than the hand.
-                const enterFrom = direction === 'clockwise' ? 100 : -100;
-                const exitTo = direction === 'clockwise' ? -100 : 100;
+
+                // A swipe landing mid-fade leaves the arriving layer part way up.
+                // It becomes the base for this fade, so it has to be taken the rest
+                // of the way first, or the canvas shows through both layers.
+                outgoing.style.transition = 'none';
+                outgoing.style.opacity = '1';
+                outgoing.style.zIndex = '0';
 
                 incoming.style.transition = 'none';
-                incoming.style.transform = `translateX(${enterFrom}%)`;
-                incoming.style.backgroundColor = outgoing.style.backgroundColor;
-                // Commit that start position before attaching the transition,
+                incoming.style.opacity = '0';
+                incoming.style.zIndex = '1';
+                // Held at the destination colour for the whole fade. Letting the
+                // tween walk this layer through the same intermediate colours the
+                // one beneath is showing would keep the two nearly identical, and
+                // there would be nothing to see fading.
+                incoming.style.backgroundColor = rgbString(brightenColor(
+                    SECTION_BACKGROUND_COLORS[sectionIndex], MOBILE_CONTENT_BRIGHTEN
+                ));
+                // Commit that start state before attaching the transition,
                 // otherwise the browser animates from wherever the layer last sat.
                 void incoming.offsetWidth;
 
-                const travel = `transform ${ROTATION_DURATION}ms cubic-bezier(0.215, 0.61, 0.355, 1)`;
-                incoming.style.transition = travel;
-                outgoing.style.transition = travel;
-                incoming.style.transform = 'translateX(0)';
-                outgoing.style.transform = `translateX(${exitTo}%)`;
+                peekFading = true;
+                incoming.style.transition =
+                    `opacity ${ROTATION_DURATION}ms cubic-bezier(0.215, 0.61, 0.355, 1)`;
+                incoming.style.opacity = '1';
 
                 activePeekFill = 1 - activePeekFill;
+
+                // Hands the layer back to the tween once it is fully up. Both run
+                // for the same duration, so this is only re-stating the colour it
+                // has already reached, and it keeps the two in step if they drift.
+                window.clearTimeout(peekFadeTimer);
+                peekFadeTimer = window.setTimeout(() => {
+                    peekFading = false;
+                    setBackgroundColor(currentBackgroundColor);
+                }, ROTATION_DURATION);
             }
 
             function brightenColor(color, amount) {
@@ -1149,7 +1167,9 @@
             }
 
             peekFills.forEach((fill, index) => {
-                fill.style.transform = index === activePeekFill ? 'translateX(0)' : 'translateX(100%)';
+                const active = index === activePeekFill;
+                fill.style.opacity = active ? '1' : '0';
+                fill.style.zIndex = active ? '1' : '0';
             });
 
             applySectionObjectScales(sectionScaleValues);
@@ -1216,7 +1236,7 @@
                     }
 
                     currentSectionIndex = sectionIndex;
-                    animatePeek(direction);
+                    animatePeek(sectionIndex);
                     animateBackgroundColor(currentSectionIndex);
                     return;
                 }
