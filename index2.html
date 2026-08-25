@@ -254,24 +254,164 @@
             -webkit-text-fill-color: #000000 !important;
         }
 
-        #swipe-hint {
+        #model-spacer,
+        #peek {
             display: none;
         }
 
-        /* Mobile-only mode: show only the 3D scene. */
+        /* Mobile: the model is the landing view and the content scrolls up over it.
+           Scrolling is left to the browser so it stays on the compositor. */
         @media (max-width: 768px) {
+            html, body {
+                height: auto;
+                min-height: 100%;
+                overflow: visible;
+            }
+
+            /* Vertical drags have to scroll the page, which leaves only horizontal
+               ones for the swipe handler to read as a section change. */
+            #spline-canvas {
+                touch-action: pan-y;
+            }
+
+            #model-spacer {
+                display: block;
+                height: 100vh;
+                height: 100svh;
+            }
+
             #content {
-                display: none !important;
+                display: block !important;
+                position: relative;
+                z-index: 2;
+                left: auto;
+                top: auto;
+                width: 100%;
+                height: auto;
+                /* Guarantees the model ends up fully covered, so it can stop
+                   rendering. Measured against the tall viewport, since the URL bar
+                   retracts on the way down and the content has to still reach. */
+                min-height: 100vh;
+                min-height: 100lvh;
+                overflow: visible;
+                padding: 0;
+                /* Replaced from script with 15% brighter than the colour behind the model. */
+                background: #2c2229;
+
+                --m-h1: 3.15rem;
+                --m-h2: 1.3rem;
+                --m-p: 1.1rem;
+                --m-chinese: 2.75rem;
+            }
+
+            .content-section {
+                position: relative;
+                inset: auto;
+                display: none;
+                opacity: 1;
+                transform: none;
+                pointer-events: auto;
+                overflow: visible;
+                /* Bottom padding clears the peek strip, which stays pinned on top. */
+                padding: 56px 24px calc(96px + env(safe-area-inset-bottom, 0px));
+            }
+
+            .content-section.is-active {
+                display: block;
+            }
+
+            /* The desktop slide-in would fight the page scroll. */
+            .content-section.is-animating {
+                transition: none;
+            }
+
+            #content h1 {
+                font-size: var(--m-h1);
+                margin-bottom: 1rem;
+            }
+
+            #content h2 {
+                font-size: var(--m-h2);
+                margin-left: 0;
+                margin-bottom: 1.1rem;
+            }
+
+            #content p {
+                font-size: var(--m-p);
+                margin-left: 0;
+            }
+
+            #content p.blank-line {
+                margin-left: 0;
+            }
+
+            #content .wedding-details .chinese-text {
+                font-size: var(--m-chinese);
+            }
+
+            #content .wedding-details h2.rsvp-note {
+                font-size: calc(var(--m-h2) * 0.8);
+            }
+
+            .section-two-content .two-column {
+                flex-direction: column;
+                gap: 32px;
+                margin-top: 1.5rem;
+                margin-left: 0;
+            }
+
+            .section-two-content .two-column li {
+                font-size: var(--m-p);
+            }
+
+            #rsvp-widget {
+                width: 100%;
+                max-width: none;
+                margin-top: 1rem;
+                margin-left: 0 !important;
+                transform: none;
+            }
+
+            #rsvp-widget,
+            #rsvp-widget * {
+                font-size: var(--m-p) !important;
+            }
+
+            /* A sliver of the reading background pinned above the model, deep
+               enough to contain the hint. It stays put while the hint fades. */
+            #peek {
+                /* Breathing room around the hint, which sets how deep the strip is. */
+                --peek-pad: 20px;
+
+                display: flex;
+                position: fixed;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                z-index: 3;
+                align-items: center;
+                justify-content: center;
+                overflow: hidden;
+                padding: var(--peek-pad, 20px) 16px
+                         calc(var(--peek-pad, 20px) + env(safe-area-inset-bottom, 0px));
+                /* Must not swallow swipes aimed at the model behind it. */
+                pointer-events: none;
+            }
+
+            /* Two layers, so a section change can carry the outgoing colour off
+               one side while the incoming one arrives from the other. */
+            .peek-fill {
+                position: absolute;
+                inset: 0;
+                background: #2c2229;
+                will-change: transform;
             }
 
             #swipe-hint {
                 display: block;
-                position: fixed;
-                left: 0;
-                right: 0;
-                bottom: calc(9px + env(safe-area-inset-bottom, 0px));
+                position: relative;
                 margin: 0;
-                padding: 0 16px;
+                padding: 0;
                 text-align: center;
                 font-family: 'Raleway', sans-serif;
                 font-weight: 300;
@@ -279,15 +419,14 @@
                 line-height: 1.5;
                 color: #FFFFFF;
                 opacity: 0.5;
-                /* Must not swallow swipes aimed at the model behind it. */
-                pointer-events: none;
             }
         }
     </style>
 </head>
 <body>
     <canvas id="spline-canvas"></canvas>
-    <p id="swipe-hint">swipe &#8592; &#8594; for sections, &#8593;&#8595; for details</p>
+    <!-- Holds the model view open on mobile until the reader scrolls past it. -->
+    <div id="model-spacer" aria-hidden="true"></div>
     <main id="content">
         <section class="content-section is-active wedding-details" data-section-index="0">
             <h1>01.02.2027</h1>
@@ -381,6 +520,11 @@
             <p>For members of the Hickner family who can’t make the trip to Taiwan, we’re planning to host a casual gathering in Michigan at a later date so we can spend time together and mark the occasion.</p>
         </section>
     </main>
+    <div id="peek">
+        <div class="peek-fill" aria-hidden="true"></div>
+        <div class="peek-fill" aria-hidden="true"></div>
+        <p id="swipe-hint">swipe &#8592; &#8594; for sections, &#8593;&#8595; for details</p>
+    </div>
 
     <script type="module">
         import { Application } from 'https://unpkg.com/@splinetool/runtime@1.12.18/build/runtime.js';
@@ -472,6 +616,23 @@
         // Extra pixel nudge applied after the ratio-based placement above.
         const MOBILE_TARGET_NUDGE_X = 0;
         const MOBILE_TARGET_NUDGE_Y = 10;
+
+        // Mobile reading view. Content sits on a lighter shade of whatever is
+        // behind the model, and a strip of it stays visible above the model as a
+        // hint that there is more below.
+        const MOBILE_CONTENT_BRIGHTEN = 0.15;
+        // Scroll distance over which the swipe hint fades away. Only the hint
+        // fades; the strip behind it holds its colour.
+        const HINT_FADE_PX = 90;
+        // Rotating while reading would change the section behind the content
+        // silently, so swipes only count while the model is what's on screen.
+        const SCROLL_TOP_EPSILON = 4;
+
+        // The model is the landing view, so returning to a remembered scroll
+        // position would drop the reader into content with no way back in sight.
+        if ('scrollRestoration' in history) {
+            history.scrollRestoration = 'manual';
+        }
 
         const DEBUG = params.has('debug');
 
@@ -734,6 +895,12 @@
             const content = document.getElementById('content');
             const sections = Array.from(content.querySelectorAll('[data-section-index]'));
             const sectionObjects = SECTION_OBJECT_NAMES.map((name) => spline.get(name));
+            const peek = document.getElementById('peek');
+            const hint = document.getElementById('swipe-hint');
+            const spacer = document.getElementById('model-spacer');
+            const peekFills = peek ? Array.from(peek.querySelectorAll('.peek-fill')) : [];
+            // Exactly one fill is ever on screen; the spare waits off to the side.
+            let activePeekFill = 0;
             const quarterTurn = Math.PI / 2;
             content.style.setProperty('--section-duration', `${ROTATION_DURATION}ms`);
             let currentSectionIndex = sections.findIndex((section) => section.classList.contains('is-active'));
@@ -826,9 +993,57 @@
                 applySectionObjectScales(sectionScaleValues);
             }
 
+            function rgbString(color) {
+                return `rgb(${Math.round(color.r)}, ${Math.round(color.g)}, ${Math.round(color.b)})`;
+            }
+
             function setBackgroundColor(color) {
-                document.body.style.backgroundColor = `rgb(${Math.round(color.r)}, ${Math.round(color.g)}, ${Math.round(color.b)})`;
+                const behindModel = rgbString(color);
+                document.body.style.backgroundColor = behindModel;
+                // Overscrolling on iOS exposes the root element, not the body.
+                document.documentElement.style.backgroundColor = behindModel;
+
+                // Written straight onto the two elements that need it. A custom
+                // property on a shared ancestor would invalidate the whole
+                // document's style on every frame of the tween.
+                // Desktop floats its text over the model, so it must stay clear.
+                const reading = rgbString(brightenColor(color, MOBILE_CONTENT_BRIGHTEN));
+                content.style.backgroundColor = isMobileViewport() ? reading : '';
+                if (peekFills[activePeekFill]) {
+                    peekFills[activePeekFill].style.backgroundColor = reading;
+                }
+
                 setRsvpButtonColor(color);
+            }
+
+            // The strip reads as the leading edge of the section being swiped in,
+            // so it travels with the rotation rather than just changing colour.
+            // The incoming layer starts on the old colour and is carried into the
+            // new one by the background tween already running alongside it.
+            function animatePeek(direction) {
+                if (peekFills.length < 2) {
+                    return;
+                }
+
+                const outgoing = peekFills[activePeekFill];
+                const incoming = peekFills[1 - activePeekFill];
+                const enterFrom = direction === 'clockwise' ? -100 : 100;
+                const exitTo = direction === 'clockwise' ? 100 : -100;
+
+                incoming.style.transition = 'none';
+                incoming.style.transform = `translateX(${enterFrom}%)`;
+                incoming.style.backgroundColor = outgoing.style.backgroundColor;
+                // Commit that start position before attaching the transition,
+                // otherwise the browser animates from wherever the layer last sat.
+                void incoming.offsetWidth;
+
+                const travel = `transform ${ROTATION_DURATION}ms cubic-bezier(0.215, 0.61, 0.355, 1)`;
+                incoming.style.transition = travel;
+                outgoing.style.transition = travel;
+                incoming.style.transform = 'translateX(0)';
+                outgoing.style.transform = `translateX(${exitTo}%)`;
+
+                activePeekFill = 1 - activePeekFill;
             }
 
             function brightenColor(color, amount) {
@@ -883,6 +1098,10 @@
                 backgroundFrame = requestAnimationFrame(bgTick);
             }
 
+            peekFills.forEach((fill, index) => {
+                fill.style.transform = index === activePeekFill ? 'translateX(0)' : 'translateX(100%)';
+            });
+
             applySectionObjectScales(sectionScaleValues);
             setBackgroundColor(currentBackgroundColor);
             window.addEventListener('resize', syncSectionObjectScalesToViewport);
@@ -925,10 +1144,29 @@
                     return;
                 }
 
-                // #content is display:none on mobile, so the class churn and the
-                // forced layout below cost time for something nobody can see.
+                // Mobile shows one section at a time stacked below the model, so it
+                // swaps which one exists rather than sliding them past each other.
+                // This only ever runs while scrolled to the top, so the swap itself
+                // is off screen and the strip is the only part of it anyone sees.
                 if (isMobileViewport()) {
+                    const arriving = sections.find(
+                        (section) => Number(section.dataset.sectionIndex) === sectionIndex
+                    );
+
+                    if (arriving) {
+                        sections.forEach((section) => section.classList.remove(
+                            'is-active',
+                            'is-animating',
+                            'enter-from-left',
+                            'enter-from-right',
+                            'exit-to-left',
+                            'exit-to-right'
+                        ));
+                        arriving.classList.add('is-active');
+                    }
+
                     currentSectionIndex = sectionIndex;
+                    animatePeek(direction);
                     animateBackgroundColor(currentSectionIndex);
                     return;
                 }
@@ -1078,6 +1316,11 @@
                 if (!isMobileViewport()) {
                     return;
                 }
+                // Only the model view navigates. A horizontal swipe while reading
+                // would rotate to a section the reader cannot see happening.
+                if (window.scrollY > SCROLL_TOP_EPSILON) {
+                    return;
+                }
                 const deltaX = event.clientX - swipeStartX;
                 const deltaY = event.clientY - swipeStartY;
                 const absX = Math.abs(deltaX);
@@ -1102,6 +1345,72 @@
             window.addEventListener('pointerleave', () => {
                 canvas.style.cursor = '';
             }, { capture: true });
+
+            // Rendering a model nobody can see costs frame rate the scroll needs,
+            // so it stops once the content has covered it and starts again the
+            // moment any part of it is back on screen.
+            // Pausing is only safe if the scene can be restarted, so treat a
+            // runtime missing either half as one that cannot be paused at all.
+            const canPauseRender = typeof app.stop === 'function' && typeof app.play === 'function';
+            let renderPaused = false;
+            let scrollFrame = null;
+            // Cached because reading it forces a layout, and this runs per scroll
+            // frame. svh does not track the URL bar, so a resize is the only thing
+            // that can change it.
+            let modelHeight = window.innerHeight;
+
+            function measureModel() {
+                modelHeight = spacer && spacer.offsetHeight ? spacer.offsetHeight : window.innerHeight;
+            }
+
+            function setRenderPaused(paused) {
+                if (!canPauseRender || paused === renderPaused) {
+                    return;
+                }
+                if (paused) {
+                    app.stop();
+                } else {
+                    app.play();
+                }
+                renderPaused = paused;
+            }
+
+            function updateScrollState() {
+                scrollFrame = null;
+
+                if (!isMobileViewport()) {
+                    if (hint) {
+                        hint.style.opacity = '';
+                    }
+                    setRenderPaused(false);
+                    return;
+                }
+
+                const scrolled = Math.max(window.scrollY, 0);
+
+                if (hint) {
+                    const faded = Math.min(scrolled / HINT_FADE_PX, 1);
+                    hint.style.opacity = String(0.5 * (1 - faded));
+                }
+
+                setRenderPaused(scrolled >= modelHeight - 1);
+            }
+
+            window.addEventListener('scroll', () => {
+                if (scrollFrame === null) {
+                    scrollFrame = requestAnimationFrame(updateScrollState);
+                }
+            }, { passive: true });
+            window.addEventListener('resize', () => {
+                measureModel();
+                updateScrollState();
+            });
+            window.addEventListener('orientationchange', () => {
+                measureModel();
+                updateScrollState();
+            });
+            measureModel();
+            updateScrollState();
         }
 
         // Always use the exact export URL from Spline.
@@ -1178,11 +1487,10 @@
         });
     </script>
     <script>
-        // Mobile hides #content entirely today, so the widget would download and build
-        // a DOM nobody can see. Flip this to true once the phone layout has an RSVP
-        // section. Breakpoint must match MOBILE_BREAKPOINT; this classic script runs
-        // before the module, so the constant is not in scope here.
-        const ENABLE_RSVP_ON_MOBILE = false;
+        // The phone layout now has section 1, so the widget has somewhere to go.
+        // Breakpoint must match MOBILE_BREAKPOINT; this classic script runs before
+        // the module, so the constant is not in scope here.
+        const ENABLE_RSVP_ON_MOBILE = true;
         const RSVP_MOBILE_BREAKPOINT = 768;
 
         if (ENABLE_RSVP_ON_MOBILE || window.innerWidth > RSVP_MOBILE_BREAKPOINT) {
