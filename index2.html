@@ -400,18 +400,25 @@
             #peek {
                 /* Breathing room around the hint, which sets how deep the strip is. */
                 --peek-pad: 20px;
+                /* Taken back off the safe-area allowance, which on its own parks the
+                   hint higher than it needs to sit to clear Safari's address bar. */
+                --peek-drop: 16px;
+                /* Runs the strip past the bottom edge, so no sliver of the page can
+                   show beneath it however the browser resolves the safe area. */
+                --peek-bleed: 80px;
 
                 display: flex;
                 position: fixed;
                 left: 0;
                 right: 0;
-                bottom: 0;
+                bottom: calc(var(--peek-bleed) * -1);
                 z-index: 3;
                 align-items: center;
                 justify-content: center;
                 overflow: hidden;
-                padding: var(--peek-pad, 20px) 16px
-                         calc(var(--peek-pad, 20px) + env(safe-area-inset-bottom, 0px));
+                padding: var(--peek-pad) 16px
+                         calc(var(--peek-bleed) + var(--peek-pad) +
+                              max(0px, env(safe-area-inset-bottom, 0px) - var(--peek-drop)));
                 /* Must not swallow swipes aimed at the model behind it. */
                 pointer-events: none;
             }
@@ -1059,8 +1066,12 @@
 
                 const outgoing = peekFills[activePeekFill];
                 const incoming = peekFills[1 - activePeekFill];
-                const enterFrom = direction === 'clockwise' ? -100 : 100;
-                const exitTo = direction === 'clockwise' ? 100 : -100;
+                // Reads as the strip being dragged along by the swipe: a swipe left
+                // carries the current colour off to the left and pulls the next one
+                // in behind it. This is the opposite of the desktop panels, which
+                // follow the model's rotation rather than the hand.
+                const enterFrom = direction === 'clockwise' ? 100 : -100;
+                const exitTo = direction === 'clockwise' ? -100 : 100;
 
                 incoming.style.transition = 'none';
                 incoming.style.transform = `translateX(${enterFrom}%)`;
