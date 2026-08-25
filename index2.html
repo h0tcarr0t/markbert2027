@@ -269,7 +269,7 @@
                 position: fixed;
                 left: 0;
                 right: 0;
-                bottom: calc(19px + env(safe-area-inset-bottom, 0px));
+                bottom: calc(9px + env(safe-area-inset-bottom, 0px));
                 margin: 0;
                 padding: 0 16px;
                 text-align: center;
@@ -390,6 +390,16 @@
         const DESKTOP_SCENE = 'https://prod.spline.design/C1BUyPU9yQdApM7J/scene.splinecode';
         const MOBILE_SCENE = 'https://prod.spline.design/izNtHqnbzyxd3ly6/scene.splinecode';
 
+        const params = new URLSearchParams(window.location.search);
+
+        // Framing has to be matched to the scene's camera by eye on a real phone,
+        // so the values below can be overridden from the URL during tuning and
+        // then baked in here once they look right.
+        const paramNumber = (key, fallback) => {
+            const value = Number(params.get(key));
+            return params.has(key) && Number.isFinite(value) ? value : fallback;
+        };
+
         // Rotation applied per click side, in radians.
         // Left side click: +90deg, right side click: -90deg.
         const ROTATION_STEP_LEFT = Math.PI / 2;
@@ -420,7 +430,7 @@
         // Mobile base framing: fixed world transform that fits the whole model
         // on screen. Everything responsive is handled in screen space below.
         // Changing the scale here is not a linear change in on-screen size, so
-        // resize via MOBILE_ZOOM_X instead and leave this alone.
+        // resize with the mobile scene's camera Zoom in Spline and leave this alone.
         const MOBILE_BASE_OFFSET_X = -120;
         const MOBILE_BASE_OFFSET_Y = 220;
         const MOBILE_BASE_SCALE = 0.62;
@@ -428,31 +438,58 @@
         // Mobile screen-space framing. The canvas is rendered larger than the
         // viewport and shifted, so the model's apparent size and position are
         // exact fractions of the phone screen regardless of device size.
-        // MOBILE_ZOOM_X is the minimum that still lets the model centre sit on the left
-        // edge with the canvas covering the screen (half the canvas width must reach
-        // across the viewport, so 2x, plus a rounding margin). It renders at the phone's
-        // native pixel ratio, so the result is pixel-sharp. Raising it magnifies the
-        // model, but past roughly 3x iOS Safari refuses the allocation and kills the tab.
-        const MOBILE_ZOOM_X = 2.05;
-        // The scene is fitted to the narrower of the two canvas dimensions, which on a
-        // portrait phone is the width, so height buys no magnification and only costs
-        // pixels. This is just enough to cover the screen once the offset is applied.
-        // If the model comes out smaller, height is binding after all: set this to
-        // MOBILE_ZOOM_X to undo.
-        const MOBILE_ZOOM_Y = 1.2;
-        // Where the model centre sits inside the base framing (0..1 of canvas).
-        const MOBILE_BASE_CENTRE_X = 0.5;
-        const MOBILE_BASE_CENTRE_Y = 0.47;
+        // Its size is derived from the constraints below rather than set by hand:
+        // every pixel outside the viewport is still shaded against all 13 lights and
+        // then discarded. Measured on an iPhone, fill runs ~14.7ms per megapixel on
+        // top of a ~16.7ms floor that pixels do not touch, so wasted area was most of
+        // the difference between the sustained frame rate and the opening one. The
+        // burst on load is the phone's boost clock, not a state that can be restored.
+        // Margin against sub-pixel rounding and the iOS URL bar resizing mid-gesture.
+        const MOBILE_CANVAS_SAFETY = 1.02;
+        // Resizing the canvas reallocates the WebGL drawing buffer, so it must not
+        // track every viewport wobble. Shrink only once the canvas is this much
+        // larger than it needs to be; growing always happens immediately.
+        const MOBILE_CANVAS_SHRINK_THRESHOLD = 0.9;
+        // Where the model centre sits inside the rendered frame (0..1 of canvas).
+        // This describes the scene's camera, not a preference: it has to match wherever
+        // the camera is actually pointed, and the canvas is then sized around it.
+        //
+        // MOBILE_BASE_CENTRE_X is the expensive one. At 0.5 the model is centred in
+        // frame, so putting it near the screen's left edge strands the canvas's whole
+        // left half off-screen. Override live with ?cx= to match this to the camera
+        // by eye, which also slides the model horizontally on screen.
+        const MOBILE_BASE_CENTRE_X = paramNumber('cx', 0.15);
+        const MOBILE_BASE_CENTRE_Y = paramNumber('cy', 0.47);
         // Where the model centre should land on screen (0..1 of viewport).
-        // 0 puts the centre exactly on the left edge, so only the right half shows.
-        const MOBILE_TARGET_CENTRE_X = 0;
+        // Holding this equal to MOBILE_BASE_CENTRE_X is what keeps the canvas down to
+        // viewport size: the model then sits at the same fraction of the screen as it
+        // does of the frame, so neither edge has to overhang to reach the screen. Any
+        // gap between the two widens the canvas in whichever direction is short, and
+        // costs frame rate. A fixed pixel offset would also be a different fraction on
+        // every device, so the framing would only be right on the phone it was tuned on.
+        const MOBILE_TARGET_CENTRE_X = MOBILE_BASE_CENTRE_X;
         const MOBILE_TARGET_CENTRE_Y = 0.46;
         // Extra pixel nudge applied after the ratio-based placement above.
-        const MOBILE_TARGET_NUDGE_X = 70;
+        const MOBILE_TARGET_NUDGE_X = 0;
         const MOBILE_TARGET_NUDGE_Y = 10;
 
-        const params = new URLSearchParams(window.location.search);
         const DEBUG = params.has('debug');
+
+        // Mobile drives the rotation itself and needs nothing from Spline's own
+        // interaction system, but touches still reach it and can start internal
+        // state transitions on every swipe. Add ?noevents to cut that off at the
+        // window and see whether the frame rate stops decaying. Capture-phase
+        // listeners on window all still run, so our swipe handling is unaffected;
+        // only the canvas below stops hearing about it.
+        if (params.has('noevents')) {
+            ['pointerdown', 'pointermove', 'pointerup', 'pointercancel'].forEach((type) => {
+                window.addEventListener(type, (event) => {
+                    if (window.innerWidth <= MOBILE_BREAKPOINT) {
+                        event.stopPropagation();
+                    }
+                }, { capture: true });
+            });
+        }
 
         // Leaves at full speed and decelerates into the stop.
         function easeOut(t) {
@@ -461,7 +498,10 @@
 
         // The canvas is already twice the width of the screen, so at the phone's native
         // 3x ratio it renders more than twice the pixels of 2x. Desktop is untouched.
-        const MOBILE_MAX_PIXEL_RATIO = 2;
+        // ?dpr=1 quarters the pixel count without touching anything else, which
+        // separates a fill-rate limit from a draw-call limit: if the sustained frame
+        // rate barely moves, the cost is the ~900 objects, not the pixels.
+        const MOBILE_MAX_PIXEL_RATIO = Number(params.get('dpr')) || 2;
         const nativePixelRatio = window.devicePixelRatio || 1;
 
         Object.defineProperty(window, 'devicePixelRatio', {
@@ -474,7 +514,46 @@
         });
 
         const canvas = document.getElementById('spline-canvas');
+
+        // The frame rate collapses over ~20 swipes but a reload restores it, which
+        // rules out thermal throttling and means something accumulates per swipe.
+        // Counting the GPU objects the runtime allocates against the ones it frees
+        // shows whether that something is a leaked WebGL resource.
+        const glLive = {};
+        if (DEBUG) {
+            const nativeGetContext = canvas.getContext.bind(canvas);
+            const kinds = ['Texture', 'Buffer', 'Framebuffer', 'Renderbuffer', 'Program', 'Shader'];
+
+            canvas.getContext = (type, attributes) => {
+                const gl = nativeGetContext(type, attributes);
+                if (!gl || !/webgl/i.test(type)) {
+                    return gl;
+                }
+                kinds.forEach((kind) => {
+                    const create = gl[`create${kind}`];
+                    const destroy = gl[`delete${kind}`];
+                    if (typeof create !== 'function' || typeof destroy !== 'function') {
+                        return;
+                    }
+                    glLive[kind] = 0;
+                    gl[`create${kind}`] = function (...args) {
+                        glLive[kind] += 1;
+                        return create.apply(this, args);
+                    };
+                    gl[`delete${kind}`] = function (...args) {
+                        glLive[kind] -= 1;
+                        return destroy.apply(this, args);
+                    };
+                });
+                return gl;
+            };
+        }
+
         const app = new Application(canvas);
+
+        // The canvas size currently applied, which lags the viewport on purpose.
+        let framedWidth = 0;
+        let framedHeight = 0;
 
         // Renders the scene into a canvas larger than the viewport and offsets it,
         // so the model's on-screen size and centre are exact fractions of the
@@ -482,6 +561,8 @@
         // stays correct on any device size.
         function applyCanvasFraming(mobile) {
             if (!mobile) {
+                framedWidth = 0;
+                framedHeight = 0;
                 canvas.style.width = '';
                 canvas.style.height = '';
                 canvas.style.left = '';
@@ -491,16 +572,52 @@
 
             const viewportWidth = window.innerWidth;
             const viewportHeight = window.innerHeight;
-            const canvasWidth = viewportWidth * MOBILE_ZOOM_X;
-            const canvasHeight = viewportHeight * MOBILE_ZOOM_Y;
 
-            const centreInCanvasX = canvasWidth * MOBILE_BASE_CENTRE_X;
-            const centreInCanvasY = canvasHeight * MOBILE_BASE_CENTRE_Y;
+            // Where the model's centre has to land on screen.
+            const targetX = viewportWidth * MOBILE_TARGET_CENTRE_X + MOBILE_TARGET_NUDGE_X;
+            const targetY = viewportHeight * MOBILE_TARGET_CENTRE_Y + MOBILE_TARGET_NUDGE_Y;
 
-            canvas.style.width = `${canvasWidth}px`;
-            canvas.style.height = `${canvasHeight}px`;
-            canvas.style.left = `${viewportWidth * MOBILE_TARGET_CENTRE_X - centreInCanvasX + MOBILE_TARGET_NUDGE_X}px`;
-            canvas.style.top = `${viewportHeight * MOBILE_TARGET_CENTRE_Y - centreInCanvasY + MOBILE_TARGET_NUDGE_Y}px`;
+            // A canvas whose CSS size is not a whole number of device pixels cannot
+            // be blitted straight to the screen: the compositor resamples the entire
+            // layer every frame, which costs more than the fill this sizing saves.
+            // Snapping the size outward and the offset to the nearest grid line keeps
+            // the drawing buffer mapped 1:1 to the display.
+            const ratio = window.devicePixelRatio || 1;
+            const snapOut = (value) => Math.ceil(value * ratio) / ratio;
+            const snapTo = (value) => Math.round(value * ratio) / ratio;
+
+            // Pinning the model's point in the canvas to that target fixes both
+            // canvas edges relative to its size, so requiring each edge to clear
+            // the matching edge of the viewport gives a minimum per side. The
+            // larger of the two is the smallest canvas that still covers the screen.
+            // A fraction of 0 or 1 puts the model on a canvas edge, leaving no canvas
+            // at all on that side, so that side simply stops constraining the size.
+            const minimumSpan = (nearGap, farGap, fraction) => Math.max(
+                fraction > 0 ? nearGap / fraction : 0,
+                fraction < 1 ? farGap / (1 - fraction) : 0
+            );
+
+            const neededWidth = snapOut(MOBILE_CANVAS_SAFETY *
+                minimumSpan(targetX, viewportWidth - targetX, MOBILE_BASE_CENTRE_X));
+            const neededHeight = snapOut(MOBILE_CANVAS_SAFETY *
+                minimumSpan(targetY, viewportHeight - targetY, MOBILE_BASE_CENTRE_Y));
+
+            // Safari reports a new innerHeight every time the URL bar slides, which
+            // lands in the middle of a swipe. Holding the buffer steady through that
+            // matters more than the handful of rows a resize would reclaim.
+            if (neededWidth > framedWidth || neededWidth < framedWidth * MOBILE_CANVAS_SHRINK_THRESHOLD) {
+                framedWidth = neededWidth;
+                canvas.style.width = `${framedWidth}px`;
+            }
+            if (neededHeight > framedHeight || neededHeight < framedHeight * MOBILE_CANVAS_SHRINK_THRESHOLD) {
+                framedHeight = neededHeight;
+                canvas.style.height = `${framedHeight}px`;
+            }
+
+            // Offsets are pure CSS and cost nothing, so they always track the
+            // viewport exactly, keeping the model pinned even between resizes.
+            canvas.style.left = `${snapTo(targetX - framedWidth * MOBILE_BASE_CENTRE_X)}px`;
+            canvas.style.top = `${snapTo(targetY - framedHeight * MOBILE_BASE_CENTRE_Y)}px`;
         }
 
         const leftArrowCursor = `url("data:image/svg+xml;utf8,${encodeURIComponent(`
@@ -552,6 +669,65 @@
         };
 
         window.spline = spline;
+
+        // Swipe smoothness is hard to judge by feel, especially once the phone is
+        // warm and every run starts from a different thermal state. Add ?debug to
+        // the URL for a live readout: watch whether the rate decays over a couple
+        // of minutes, and how much it recovers after letting the phone cool.
+        // Filled in once the scene lands, so the phone can show whether it really
+        // fetched a fresh export or replayed a cached one.
+        let debugSceneLine = 'scene: loading';
+        // Decay tracks one of these two and they have different causes: swipe count
+        // means something accumulates per interaction, seconds alone means the
+        // continuous render load is what degrades.
+        let debugSwipes = 0;
+
+        if (DEBUG) {
+            const meter = document.createElement('div');
+            meter.style.cssText =
+                'position:fixed;top:0;left:0;z-index:9999;padding:4px 8px;' +
+                'font:12px/1.35 ui-monospace,monospace;color:#0f0;' +
+                'background:rgba(0,0,0,0.72);white-space:pre;pointer-events:none';
+            document.body.appendChild(meter);
+
+            let frames = 0;
+            let slowest = 0;
+            let windowStart = performance.now();
+            let previous = windowStart;
+
+            const sample = (now) => {
+                frames += 1;
+                slowest = Math.max(slowest, now - previous);
+                previous = now;
+
+                const elapsed = now - windowStart;
+                if (elapsed >= 1000) {
+                    const ratio = window.devicePixelRatio || 1;
+                    const megapixels =
+                        canvas.clientWidth * ratio * canvas.clientHeight * ratio / 1e6;
+                    // Any of these climbing as you swipe is the leak.
+                    const gpu = Object.entries(glLive)
+                        .map(([kind, count]) => `${kind.slice(0, 3).toLowerCase()} ${count}`)
+                        .join('  ');
+                    const heap = performance.memory
+                        ? `\nheap ${(performance.memory.usedJSHeapSize / 1048576).toFixed(0)}MB`
+                        : '';
+
+                    meter.textContent =
+                        `${Math.round(frames * 1000 / elapsed)} fps   worst ${slowest.toFixed(0)}ms\n` +
+                        `${debugSwipes} swipes   ${Math.round(now / 1000)}s alive\n` +
+                        `${canvas.clientWidth}x${canvas.clientHeight} css @${ratio}x\n` +
+                        `${megapixels.toFixed(2)} Mpx per frame\n` +
+                        `${gpu || 'gl not instrumented'}\n` +
+                        `${debugSceneLine}${heap}`;
+                    frames = 0;
+                    slowest = 0;
+                    windowStart = now;
+                }
+                requestAnimationFrame(sample);
+            };
+            requestAnimationFrame(sample);
+        }
 
         function rotateOnClick(target) {
             const baseY = target.rotation.y;
@@ -847,6 +1023,7 @@
             }
 
             function runStepRotation(step, direction) {
+                debugSwipes += 1;
                 targetAngle += step;
                 const turns = Math.round(targetAngle / quarterTurn);
                 const sectionIndex = normalizeSectionIndex(-turns);
@@ -973,6 +1150,24 @@
             }
 
             if (DEBUG) {
+                const entry = performance
+                    .getEntriesByType('resource')
+                    .find((resource) => resource.name.includes('.splinecode'));
+                const objects = app.getAllObjects().length;
+
+                if (!entry) {
+                    debugSceneLine = `${objects} objects, scene timing unavailable`;
+                } else if (!entry.encodedBodySize) {
+                    // Spline's CDN omits Timing-Allow-Origin, which zeroes the size
+                    // fields. A hit still reports a near-zero duration.
+                    debugSceneLine = `${objects} objects, ${entry.duration.toFixed(0)}ms fetch`;
+                } else {
+                    const fromCache = entry.transferSize === 0;
+                    debugSceneLine =
+                        `${objects} objects, ${(entry.encodedBodySize / 1024).toFixed(0)}KB ` +
+                        `${fromCache ? 'FROM CACHE' : 'from network'}`;
+                }
+
                 spline.list();
                 spline.inspect(TARGET_NAME);
             }
