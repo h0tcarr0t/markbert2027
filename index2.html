@@ -278,10 +278,13 @@
                    changes can. Shared by the band and by the strip above it, which
                    has to clear it.
 
-                   Sized to the window Safari averages, which measures at roughly
-                   24px. Falling short of it leaves the strip colour inside that
-                   window and drags the bar back towards grey. */
-                --chrome-band: 24px;
+                   Safari averages roughly the bottom 24px to pick the tint, so
+                   anything short of that leaves strip colour inside the window and
+                   pulls the bar towards grey: a full 24px measured rgb(1,1,1), and
+                   4px measured rgb(30,24,28). This sits just under, trading a bar of
+                   about rgb(9,9,9) for 4px less height. Going much below 20px greys
+                   it off quickly. */
+                --chrome-band: 20px;
             }
 
             /* The runtime binds its own touch handlers to the canvas and calls
