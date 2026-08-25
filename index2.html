@@ -940,8 +940,15 @@
             const spacer = document.getElementById('model-spacer');
             const peekFills = peek ? Array.from(peek.querySelectorAll('.peek-fill')) : [];
             const themeColorMeta = document.querySelector('meta[name="theme-color"]');
-            const THEME_COLOR_MIN_INTERVAL_MS = 80;
+            // Kept well below the frame rate. Safari queues these changes rather
+            // than applying them as they arrive, so flooding it is what makes it
+            // display a stale one.
+            const THEME_COLOR_MIN_INTERVAL_MS = 150;
+            // Restating the final colour after the tween has stopped, since the one
+            // Safari happens to render may be from anywhere in the animation.
+            const THEME_COLOR_SETTLE_DELAYS_MS = [250, 700];
             let themeColorWrittenAt = -Infinity;
+            let themeSettleTimers = [];
             // Exactly one fill is ever on screen; the spare waits off to the side.
             let activePeekFill = 0;
             const quarterTurn = Math.PI / 2;
@@ -1067,6 +1074,23 @@
                 );
             }
 
+            function clearThemeSettle() {
+                themeSettleTimers.forEach((timer) => window.clearTimeout(timer));
+                themeSettleTimers = [];
+            }
+
+            // Safari can be showing a colour from the middle of the tween by the
+            // time the tween has finished, and nothing further arrives to correct
+            // it. Saying the final colour again, after everything has gone quiet,
+            // is what gets the address bar onto the section actually being viewed.
+            function settleThemeColor(color) {
+                clearThemeSettle();
+                setThemeColor(color, true);
+                themeSettleTimers = THEME_COLOR_SETTLE_DELAYS_MS.map((delay) =>
+                    window.setTimeout(() => setThemeColor(color, true), delay)
+                );
+            }
+
             function setBackgroundColor(color) {
                 const behindModel = rgbString(color);
                 document.body.style.backgroundColor = behindModel;
@@ -1148,6 +1172,9 @@
                 if (backgroundFrame !== null) {
                     cancelAnimationFrame(backgroundFrame);
                 }
+                // A swipe landing mid-settle must not be corrected to the colour of
+                // the section it is already leaving.
+                clearThemeSettle();
 
                 const from = { ...currentBackgroundColor };
                 const to = { ...SECTION_BACKGROUND_COLORS[nextSectionIndex] };
@@ -1170,9 +1197,7 @@
                         backgroundFrame = requestAnimationFrame(bgTick);
                     } else {
                         backgroundFrame = null;
-                        // The throttle can swallow the last frame, which is the one
-                        // that has to be exact.
-                        setThemeColor(currentBackgroundColor, true);
+                        settleThemeColor(currentBackgroundColor);
                     }
                 }
 
