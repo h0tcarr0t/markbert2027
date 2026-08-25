@@ -940,6 +940,8 @@
             const spacer = document.getElementById('model-spacer');
             const peekFills = peek ? Array.from(peek.querySelectorAll('.peek-fill')) : [];
             const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+            const THEME_COLOR_MIN_INTERVAL_MS = 80;
+            let themeColorWrittenAt = -Infinity;
             // Exactly one fill is ever on screen; the spare waits off to the side.
             let activePeekFill = 0;
             const quarterTurn = Math.PI / 2;
@@ -1045,13 +1047,24 @@
 
             // Safari draws its address bar in this colour, which is what makes that
             // bar continue the strip instead of sitting below it as its own band.
-            function setThemeColor(color) {
-                if (themeColorMeta) {
-                    themeColorMeta.setAttribute(
-                        'content',
-                        rgbString(brightenColor(color, MOBILE_CONTENT_BRIGHTEN))
-                    );
+            // Each write repaints browser chrome, so it is deliberately kept slower
+            // than the frame rate: often enough to read as a fade across a one
+            // second swipe, rarely enough not to compete with the swipe itself.
+            function setThemeColor(color, force) {
+                if (!themeColorMeta) {
+                    return;
                 }
+
+                const now = performance.now();
+                if (!force && now - themeColorWrittenAt < THEME_COLOR_MIN_INTERVAL_MS) {
+                    return;
+                }
+
+                themeColorWrittenAt = now;
+                themeColorMeta.setAttribute(
+                    'content',
+                    rgbString(brightenColor(color, MOBILE_CONTENT_BRIGHTEN))
+                );
             }
 
             function setBackgroundColor(color) {
@@ -1069,6 +1082,10 @@
                 if (peekFills[activePeekFill]) {
                     peekFills[activePeekFill].style.backgroundColor = reading;
                 }
+
+                // Carries the address bar along with the strip rather than letting
+                // it jump to the destination colour ahead of everything else.
+                setThemeColor(color);
 
                 setRsvpButtonColor(color);
             }
@@ -1136,10 +1153,6 @@
                 const to = { ...SECTION_BACKGROUND_COLORS[nextSectionIndex] };
                 let bgStart = null;
 
-                // Once per section, not once per frame: this repaints browser
-                // chrome, which has no business being driven from an animation loop.
-                setThemeColor(to);
-
                 function bgTick(now) {
                     if (bgStart === null) {
                         bgStart = now;
@@ -1157,6 +1170,9 @@
                         backgroundFrame = requestAnimationFrame(bgTick);
                     } else {
                         backgroundFrame = null;
+                        // The throttle can swallow the last frame, which is the one
+                        // that has to be exact.
+                        setThemeColor(currentBackgroundColor, true);
                     }
                 }
 
@@ -1169,7 +1185,7 @@
 
             applySectionObjectScales(sectionScaleValues);
             setBackgroundColor(currentBackgroundColor);
-            setThemeColor(currentBackgroundColor);
+            setThemeColor(currentBackgroundColor, true);
             window.addEventListener('resize', syncSectionObjectScalesToViewport);
 
             function tick(now) {
