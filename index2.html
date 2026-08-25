@@ -414,23 +414,12 @@
             /* Sits against the bottom of the screen and carries on past it, so it
                is both the colour Safari samples and what fills the space under the
                address bar. A sibling of the strip rather than a child, so it can be
-               laid over it: the strip has to show through the top of the gradient
-               for the two to read as one. They fade out together. */
+               laid over it and sized independently. They fade out together as the
+               content rises. */
             #chrome-shade {
                 /* Runs well past the bottom edge, so nothing of it stops short of
                    the screen as the address bar comes and goes. */
                 --shade-bleed: 200px;
-                /* Depth of untouched black at the very bottom, and the setting that
-                   decides how black the address bar comes out.
-
-                   Safari appears to average about the bottom 24px when it picks the
-                   tint, so what matters is how much of that window is black rather
-                   than whether the very last pixel is. Measured from screenshots: a
-                   full 24px of black gave rgb(1,1,1), while 4px of black under a
-                   ramp gave rgb(30,24,28), which is the grey the gradient was
-                   visibly running into. At 14px the window averages near black and
-                   the ramp still has room to be seen. */
-                --shade-solid: 14px;
 
                 display: block;
                 position: fixed;
@@ -439,15 +428,7 @@
                 bottom: calc(var(--shade-bleed) * -1);
                 height: calc(var(--chrome-band) + var(--shade-bleed));
                 z-index: 4;
-                /* Transparent at the top, so what it fades out of is the strip
-                   itself, whatever colour that has reached. The cross-fade is
-                   carried for free rather than having to be matched. */
-                background: linear-gradient(
-                    to bottom,
-                    rgba(0, 0, 0, 0) 0,
-                    #000000 calc(var(--chrome-band) - var(--shade-solid)),
-                    #000000 100%
-                );
+                background: #000000;
                 pointer-events: none;
             }
 
