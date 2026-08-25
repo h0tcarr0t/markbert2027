@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>M&R 2027 — Scene Test</title>
+    <!-- iOS Safari tints its address bar from this, which is the only way to stop
+         that bar reading as a second, differently coloured strip below the hint.
+         Kept in step with the section colour from script. -->
+    <meta name="theme-color" content="#2c2229">
     <link rel="icon" href="favicon.png" type="image/png">
     <link href="https://fonts.googleapis.com/css2?family=Squada+One&family=IBM+Plex+Sans+JP:wght@700&family=Raleway:wght@300;400&display=swap" rel="stylesheet">
     <style>
@@ -398,14 +402,17 @@
             /* A sliver of the reading background pinned above the model, deep
                enough to contain the hint. It stays put while the hint fades. */
             #peek {
-                /* Breathing room around the hint, which sets how deep the strip is. */
-                --peek-pad: 20px;
-                /* Taken back off the safe-area allowance, which on its own parks the
-                   hint higher than it needs to sit to clear Safari's address bar. */
-                --peek-drop: 16px;
+                /* Breathing room around the hint. This alone sets how deep the strip
+                   is and how low the text sits, so it is the knob worth turning. */
+                --peek-pad: 12px;
+                /* Safari reports no bottom inset while its address bar is showing,
+                   since the bar already clears the home indicator. So the inset is
+                   only worth honouring for whatever exceeds the padding, which is
+                   the case where that bar is hidden and the indicator is exposed. */
+                --peek-safe: max(0px, env(safe-area-inset-bottom, 0px) - var(--peek-pad));
                 /* Runs the strip past the bottom edge, so no sliver of the page can
                    show beneath it however the browser resolves the safe area. */
-                --peek-bleed: 80px;
+                --peek-bleed: 120px;
 
                 display: flex;
                 position: fixed;
@@ -417,8 +424,7 @@
                 justify-content: center;
                 overflow: hidden;
                 padding: var(--peek-pad) 16px
-                         calc(var(--peek-bleed) + var(--peek-pad) +
-                              max(0px, env(safe-area-inset-bottom, 0px) - var(--peek-drop)));
+                         calc(var(--peek-bleed) + var(--peek-pad) + var(--peek-safe));
                 /* Must not swallow swipes aimed at the model behind it. */
                 pointer-events: none;
             }
@@ -933,6 +939,7 @@
             const hint = document.getElementById('swipe-hint');
             const spacer = document.getElementById('model-spacer');
             const peekFills = peek ? Array.from(peek.querySelectorAll('.peek-fill')) : [];
+            const themeColorMeta = document.querySelector('meta[name="theme-color"]');
             // Exactly one fill is ever on screen; the spare waits off to the side.
             let activePeekFill = 0;
             const quarterTurn = Math.PI / 2;
@@ -1036,6 +1043,17 @@
                 return `rgb(${Math.round(color.r)}, ${Math.round(color.g)}, ${Math.round(color.b)})`;
             }
 
+            // Safari draws its address bar in this colour, which is what makes that
+            // bar continue the strip instead of sitting below it as its own band.
+            function setThemeColor(color) {
+                if (themeColorMeta) {
+                    themeColorMeta.setAttribute(
+                        'content',
+                        rgbString(brightenColor(color, MOBILE_CONTENT_BRIGHTEN))
+                    );
+                }
+            }
+
             function setBackgroundColor(color) {
                 const behindModel = rgbString(color);
                 document.body.style.backgroundColor = behindModel;
@@ -1118,6 +1136,10 @@
                 const to = { ...SECTION_BACKGROUND_COLORS[nextSectionIndex] };
                 let bgStart = null;
 
+                // Once per section, not once per frame: this repaints browser
+                // chrome, which has no business being driven from an animation loop.
+                setThemeColor(to);
+
                 function bgTick(now) {
                     if (bgStart === null) {
                         bgStart = now;
@@ -1147,6 +1169,7 @@
 
             applySectionObjectScales(sectionScaleValues);
             setBackgroundColor(currentBackgroundColor);
+            setThemeColor(currentBackgroundColor);
             window.addEventListener('resize', syncSectionObjectScalesToViewport);
 
             function tick(now) {
