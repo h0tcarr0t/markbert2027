@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Fixes Safari's address bar black rather than letting it tint itself from
+         whichever section colour happens to be on screen. -->
+    <meta name="theme-color" content="#000000">
     <title>M&R 2027 — Scene Test</title>
     <link rel="icon" href="favicon.png" type="image/png">
     <link href="https://fonts.googleapis.com/css2?family=Squada+One&family=IBM+Plex+Sans+JP:wght@700&family=Raleway:wght@300;400&display=swap" rel="stylesheet">
@@ -395,8 +398,8 @@
                 font-size: var(--m-p) !important;
             }
 
-            /* A sliver of the reading background pinned above the model, deep
-               enough to contain the hint. It stays put while the hint fades. */
+            /* A sliver of the reading background pinned below the model, deep
+               enough to contain the hint. Both fade out as the content rises. */
             #peek {
                 /* Space above and below the hint, so it sits centred in the strip
                    by construction. Also what sets how deep the strip is. */
@@ -652,9 +655,9 @@
         // behind the model, and a strip of it stays visible above the model as a
         // hint that there is more below.
         const MOBILE_CONTENT_BRIGHTEN = 0.15;
-        // Scroll distance over which the swipe hint fades away. Only the hint
-        // fades; the strip behind it holds its colour.
-        const HINT_FADE_PX = 90;
+        // Scroll distance over which the strip and its hint fade away. The strip
+        // belongs to the model view, so it leaves with it.
+        const PEEK_FADE_PX = 90;
         // Rotating while reading would change the section behind the content
         // silently, so swipes only count while the model is what's on screen.
         const SCROLL_TOP_EPSILON = 4;
@@ -936,7 +939,6 @@
             const sections = Array.from(content.querySelectorAll('[data-section-index]'));
             const sectionObjects = SECTION_OBJECT_NAMES.map((name) => spline.get(name));
             const peek = document.getElementById('peek');
-            const hint = document.getElementById('swipe-hint');
             const spacer = document.getElementById('model-spacer');
             const peekFills = peek ? Array.from(peek.querySelectorAll('.peek-fill')) : [];
             // The topmost fill, and so the one whose colour is on screen. The other
@@ -1473,6 +1475,42 @@
             // Set while the content is on its way up, so arriving at the top of an
             // animation that started at the top is not mistaken for a return to it.
             let contentOpening = false;
+            // Starts true so a fresh load is not treated as a return, which would
+            // restart the scene's animations on top of the ones already running.
+            let wasAtModel = true;
+
+            // Stopping the runtime stops the scene's own animations too, and play()
+            // only restarts the render loop: anything that had been triggered stays
+            // where it was left. Re-emitting the event that started them is what
+            // brings them back. Objects with nothing bound to 'start' ignore it.
+            function restartSceneAnimations() {
+                if (typeof app.emitEvent !== 'function' || typeof app.getAllObjects !== 'function') {
+                    return;
+                }
+                app.getAllObjects().forEach((object) => {
+                    const id = object && (object.id || object.name);
+                    if (!id) {
+                        return;
+                    }
+                    try {
+                        app.emitEvent('start', id);
+                    } catch (error) {
+                        if (DEBUG) {
+                            console.warn('[spline] could not restart', id, error);
+                        }
+                    }
+                });
+            }
+
+            // Safari's address bar is expanded at the top of the page and retracted
+            // anywhere below it, so innerHeight on the way back is not what it was
+            // on the way down. The canvas offset is derived from that height, which
+            // is what leaves the model sitting slightly high or low until the next
+            // resize happens to correct it.
+            function returnToModel() {
+                applyCanvasFraming(true);
+                restartSceneAnimations();
+            }
 
             function setScrollLocked(locked) {
                 if (locked === scrollLocked) {
@@ -1498,8 +1536,8 @@
                 scrollFrame = null;
 
                 if (!isMobileViewport()) {
-                    if (hint) {
-                        hint.style.opacity = '';
+                    if (peek) {
+                        peek.style.opacity = '';
                     }
                     setScrollLocked(false);
                     setRenderPaused(false);
@@ -1508,18 +1546,26 @@
 
                 const scrolled = Math.max(window.scrollY, 0);
 
-                if (hint) {
-                    const faded = Math.min(scrolled / HINT_FADE_PX, 1);
-                    hint.style.opacity = String(0.5 * (1 - faded));
+                // The strip belongs to the model view, so it goes with it. The hint
+                // keeps its own opacity and is carried out by its parent.
+                if (peek) {
+                    peek.style.opacity = String(1 - Math.min(scrolled / PEEK_FADE_PX, 1));
                 }
+
+                const atModel = scrolled <= SCROLL_TOP_EPSILON;
 
                 // Coming back to the model closes the content and locks the page
                 // again, so the next gesture is read as rotation rather than scroll.
                 if (!contentOpening) {
-                    setScrollLocked(scrolled <= SCROLL_TOP_EPSILON);
+                    setScrollLocked(atModel);
                 }
 
                 setRenderPaused(scrolled >= modelHeight - 1);
+
+                if (atModel && !wasAtModel) {
+                    returnToModel();
+                }
+                wasAtModel = atModel;
             }
 
             // touch-action does not apply to a wheel, which would otherwise scroll
@@ -1547,6 +1593,19 @@
                 measureModel();
                 updateScrollState();
             });
+            // Safari slides its address bar without reliably firing a window resize,
+            // and it is the height that bar changes which the canvas offset is
+            // measured against. The visual viewport does report the move, so this is
+            // what keeps the model still while the bar comes and goes.
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', () => {
+                    if (isMobileViewport()) {
+                        applyCanvasFraming(true);
+                    }
+                    measureModel();
+                    updateScrollState();
+                });
+            }
             measureModel();
             updateScrollState();
         }
