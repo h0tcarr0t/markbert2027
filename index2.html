@@ -939,7 +939,7 @@
             const hint = document.getElementById('swipe-hint');
             const spacer = document.getElementById('model-spacer');
             const peekFills = peek ? Array.from(peek.querySelectorAll('.peek-fill')) : [];
-            const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+            let themeColorMeta = document.querySelector('meta[name="theme-color"]');
             // Kept well below the frame rate. Safari queues these changes rather
             // than applying them as they arrive, so flooding it is what makes it
             // display a stale one.
@@ -1068,10 +1068,17 @@
                 }
 
                 themeColorWrittenAt = now;
-                themeColorMeta.setAttribute(
-                    'content',
-                    rgbString(brightenColor(color, MOBILE_CONTENT_BRIGHTEN))
-                );
+
+                // Replaced rather than rewritten. Editing the content attribute in
+                // place leaves Safari showing whatever it rendered last: the value
+                // is correct in the DOM, but nothing prompts it to look again until
+                // something else invalidates the chrome, such as a scroll. Swapping
+                // the element out is what counts as a change it will act on.
+                const next = document.createElement('meta');
+                next.setAttribute('name', 'theme-color');
+                next.setAttribute('content', rgbString(brightenColor(color, MOBILE_CONTENT_BRIGHTEN)));
+                themeColorMeta.replaceWith(next);
+                themeColorMeta = next;
             }
 
             function clearThemeSettle() {
