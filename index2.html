@@ -718,6 +718,11 @@
         // Rotating while reading would change the section behind the content
         // silently, so swipes only count while the model is what's on screen.
         const SCROLL_TOP_EPSILON = 4;
+        // A long session on a phone ends up slower than a fresh one. Rather than
+        // chase that, the page reloads itself once it can be done without taking
+        // anything away: back on the model, on the first section, which is where a
+        // reload lands anyway. Below this age a reload costs more than it returns.
+        const PAGE_REFRESH_MIN_AGE_MS = 60000;
         // Upward travel that counts as a deliberate request for the content. Well
         // above the sideways threshold, so the model view stays a rotation surface
         // and only a decided gesture leaves it.
@@ -1267,6 +1272,8 @@
                     fromAngle -= wrap;
                     target.rotation.y = baseY + currentAngle;
                 }
+
+                maybeRefreshPage();
             }
 
             function normalizeSectionIndex(turns) {
@@ -1529,6 +1536,7 @@
             // resize happens to correct it.
             function returnToModel() {
                 applyCanvasFraming(true);
+                maybeRefreshPage();
             }
 
             // Hidden rather than stopped. Stopping the runtime also stops the
@@ -1564,6 +1572,25 @@
                 window.setTimeout(() => {
                     contentOpening = false;
                 }, CONTENT_OPEN_SETTLE_MS);
+            }
+
+            // Checked on arriving at the first section rather than polled, so a
+            // reader left sitting on the model is never reloaded out from under
+            // themselves. Reaching that section is already a return to the start,
+            // which is the one moment a reload changes nothing they can see.
+            function maybeRefreshPage() {
+                if (!isMobileViewport() || performance.now() < PAGE_REFRESH_MIN_AGE_MS) {
+                    return;
+                }
+                // Mid-rotation or mid-scroll the view is still moving, and the state
+                // being tested is not the one the reader would come back to.
+                if (frame !== null || contentOpening) {
+                    return;
+                }
+                if (currentSectionIndex !== 0 || window.scrollY > SCROLL_TOP_EPSILON) {
+                    return;
+                }
+                window.location.reload();
             }
 
             function updateScrollState() {
