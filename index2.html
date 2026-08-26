@@ -130,19 +130,34 @@
             transform: translateX(var(--section-shift));
         }
 
+        /* ---------------------------------------------------------------
+           Hyperlink colour, one per section. These four values are the only
+           thing to change; the rules further down read them. Hover fades
+           rather than shifting to a second colour, so it keeps working
+           whatever is set here.
+           --------------------------------------------------------------- */
+        .wedding-details       { --link-color: #FFF8A8; }
+        .section-two-content   { --link-color: #ffffff; }
+        .section-three-content { --link-color: #e0edff; }
+        .section-four-content  { --link-color: #ebffef; }
+
+        #content .content-section a:hover {
+            opacity: 0.7;
+        }
+
         /* Migrated from original index.html section-2 styling */
         .wedding-details {
             color: #FFF8A8;
         }
 
+        /* Alone among these in carrying no !important, because this section holds
+           the RSVP widget and the widget colours its own contents through
+           `#rsvp-widget *`. Raising this above that rule would repaint the links
+           inside the widget too. */
         .wedding-details a {
-            color: #FFF8A8;
+            color: var(--link-color);
             text-decoration: none;
-            transition: color 0.2s ease;
-        }
-
-        .wedding-details a:hover {
-            color: #FFFFC9;
+            transition: opacity 0.2s ease;
         }
 
         .wedding-details .no-dot::before {
@@ -163,26 +178,20 @@
             color: #D7D7D7;
         }
 
-        .section-two-content a {
-            color: #ffffff;
+        #content .section-two-content a {
+            color: var(--link-color) !important;
             text-decoration: none;
-            transition: color 0.2s ease;
-        }
-
-        #content .section-two-content a.registry-bright-link {
-            color: #ffffff !important;
+            transition: opacity 0.2s ease;
         }
 
         .section-three-content {
             color: #B8D6FF;
         }
 
-        /* White rather than a brightened tint of the section colour. That colour is
-           already light enough that a step towards white is not visible. */
         #content .section-three-content a {
-            color: #e0edff !important;
+            color: var(--link-color) !important;
             text-decoration: none;
-            transition: color 0.2s ease;
+            transition: opacity 0.2s ease;
         }
 
         .section-four-content {
@@ -190,9 +199,9 @@
         }
 
         #content .section-four-content a {
-            color: #E6FFEA !important;
+            color: var(--link-color) !important;
             text-decoration: none;
-            transition: color 0.2s ease;
+            transition: opacity 0.2s ease;
         }
 
         /* Travel two-column layout (matched to index.html) */
