@@ -33,6 +33,36 @@
             touch-action: none;
         }
 
+        #model-loader {
+            position: fixed;
+            top: 50%;
+            /* Centred on the part of the screen the model will occupy, which is
+               everything left of the content column, rather than on the page. */
+            left: 31vw;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+            /* Never in the way of a click aimed at the canvas behind it. */
+            pointer-events: none;
+            transition: opacity 400ms ease;
+        }
+
+        #model-loader.is-done {
+            opacity: 0;
+        }
+
+        #model-loader .spinner {
+            width: 44px;
+            height: 44px;
+            border: 3px solid rgba(255, 255, 255, 0.18);
+            border-top-color: rgba(255, 255, 255, 0.85);
+            border-radius: 50%;
+            animation: model-loader-spin 900ms linear infinite;
+        }
+
+        @keyframes model-loader-spin {
+            to { transform: rotate(360deg); }
+        }
+
         #content {
             position: fixed;
             top: 0;
@@ -315,6 +345,12 @@
                 touch-action: pan-y;
             }
 
+            /* No content column to sit beside here, so it goes to the middle of
+               the screen. */
+            #model-loader {
+                left: 50%;
+            }
+
             /* Taken out of painting once the content has covered it, so the
                compositor stops carrying a full-screen layer through every scroll
                frame. visibility rather than display: the element keeps its box, so
@@ -531,6 +567,11 @@
 </head>
 <body>
     <canvas id="spline-canvas"></canvas>
+    <!-- Stands in for the model while the scene downloads, then fades and is
+         removed. Sits where the model will appear rather than mid-page. -->
+    <div id="model-loader" role="status" aria-label="Loading 3D scene">
+        <div class="spinner" aria-hidden="true"></div>
+    </div>
     <!-- Holds the model view open on mobile until the reader scrolls past it. -->
     <div id="model-spacer" aria-hidden="true"></div>
     <main id="content">
@@ -546,7 +587,7 @@
         <section class="content-section section-two-content" data-section-index="1">
             <h1>DRESS CODE</h1>
             <h2><a href="https://theblacktux.com/blogs/resources/black-tie-optional-meaning-understanding-modern-formal-wear" target="_blank">Formal Attire · Black Tie Optional</a></h2>
-            <h2>Black &amp; White Palette</h2>
+            <h2>Black &amp; White Palette Suggested</h2>
             <h1>REGISTRY</h1>
             <p>Instead of a gift registry, we invite guests to participate in the Taiwanese tradition of <a class="registry-bright-link" href="https://en.wikipedia.org/wiki/Red_envelope" target="_blank">Red Envelopes (紅包)</a>. Your presence truly means the most, and any contribution is warmly appreciated.</p>
             <h1>TRAVEL</h1>
@@ -786,6 +827,19 @@
         });
 
         const canvas = document.getElementById('spline-canvas');
+        const modelLoader = document.getElementById('model-loader');
+
+        // Also called when the scene fails, since a spinner left turning forever
+        // reads as a page still working rather than one that gave up.
+        function hideModelLoader() {
+            if (!modelLoader) {
+                return;
+            }
+            modelLoader.classList.add('is-done');
+            // Taken out of the document after the fade rather than left invisible,
+            // so nothing keeps animating over the canvas for the rest of the visit.
+            window.setTimeout(() => modelLoader.remove(), 400);
+        }
 
         // The frame rate collapses over ~20 swipes but a reload restores it, which
         // rules out thermal throttling and means something accumulates per swipe.
@@ -1732,9 +1786,11 @@
                 spline.inspect(TARGET_NAME);
             }
 
+            hideModelLoader();
             window.dispatchEvent(new CustomEvent('spline:ready', { detail: { app } }));
         }).catch((error) => {
             console.error('[spline] failed to load scene', error);
+            hideModelLoader();
         });
     </script>
     <script>
