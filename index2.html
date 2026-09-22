@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="model-loading">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -78,6 +78,16 @@
             z-index: 1;
             --section-shift: 100%;
             --section-duration: 300ms;
+        }
+
+        /* Desktop: while the model spinner is visible, hide the right column so the
+           loader is the only thing on screen. */
+        @media (min-width: 769px) {
+            html.model-loading #content {
+                opacity: 0;
+                visibility: hidden;
+                pointer-events: none;
+            }
         }
 
         .content-section {
@@ -562,6 +572,11 @@
                 color: #FFFFFF;
                 opacity: 0.5;
             }
+
+            /* Mobile: the spinner is the only active cue during load. */
+            html.model-loading #swipe-hint {
+                opacity: 0 !important;
+            }
         }
     </style>
 </head>
@@ -622,7 +637,7 @@
             <p>Here's the official schedule for our wedding weekend. We can’t wait to celebrate these special moments together with everyone!</p>
             <p class="blank-line">&nbsp;</p>
             <h1>FRI 01.01.2027</h1>
-            <h2>Welcome Dinner</h2>
+            <h2>Family Welcome Dinner</h2>
             <p>6:00 PM · <a href="https://maps.app.goo.gl/YkF1LYmpqdKs85Xv6" target="_blank">Mountain and Sea House · 山海樓</a></p>
             <p>We invite our families and wedding party to gather together for an intimate dinner on the eve of the wedding</p>
             <p class="blank-line">&nbsp;</p>
@@ -641,7 +656,7 @@
             <p>01:00 PM · <a href="https://maps.app.goo.gl/nXFPi8hRmKdAYywXA" target="_blank">Plum Blossom Room · 梅花廳</a></p>
             <p>Please join us for a casual dim sum lunch the day after. We’ll gather around the tables for tea and shared dishes before saying goodbye</p>
             <p class="blank-line">&nbsp;</p>
-            <h1>TAIPEI: THE WEEK OF</h1>
+            <h1>WEEK IN TAIPEI</h1>
             <p>A few of you have asked what to do in Taipei, so here are some of our favorite places. We've grouped a few into a rough day-by-day, in case you'd rather see the city with friends. We'll be deep in wedding logistics most of the week, but we'll turn up where we can.</p>
             <p class="blank-line">&nbsp;</p>
             <h1>TUE 12.29.2026</h1>
@@ -677,10 +692,13 @@
             <p><a href="https://maps.app.goo.gl/8jmHweGeswmfFJZN6" target="_blank">Beitou Hot Springs (北投溫泉)</a> - Taipei's onsen district, built by the Japanese a century ago around a steaming sulfur valley. Sink into mineral-rich hot springs in a public bath or a private tub with a mountain view</p>
             <p><a href="https://maps.app.goo.gl/ATkK72Dr3g4K6Mod8" target="_blank">Huashan 1914 Creative Park (華山1914文化區)</a> - An old Japanese-era winery reborn as Taipei's creative playground, all brick warehouses, indie galleries, pop-up shops, and live music</p>
             <p><a href="https://maps.app.goo.gl/phAhMFJZP1wLvtKd9" target="_blank">Maokong Gondola (貓空纜車)</a> - A glass-bottomed ride up into the tea hills, where you'll sip oolong grown right outside the window with the city lights below</p>
+            <p><a href="https://maps.app.goo.gl/8rK6EuQ6bByzB7j56" target="_blank">Songshan Cultural Park (松山菸廠)</a> - A 1930s Japanese-era tobacco factory reborn as Taipei's design hub, with red-brick courtyards, rotating exhibitions at the Taiwan Design Museum, and the multi-level Eslite bookstore and design shops right next door</p>
             <h2>Outside Taipei</h2>
             <p><a href="https://maps.app.goo.gl/h2FTyvVX25hL2o5y5" target="_blank">Sun Moon Lake (日月潭)</a> - Taiwan's largest lake, jade-green and ringed by misty mountains, perfect for boat rides between villages and lakeside cycling. If you can, book a stay at <a href="https://maps.app.goo.gl/rRCjM6TCT7SSt7UF8" target="_blank">The Lalu 涵碧樓</a>, a luxury hotel overlooking the lake</p>
             <p><a href="https://maps.app.goo.gl/CCTUgFYNv7UF4HX36" target="_blank">Alishan National Park (阿里山國家公園)</a> - Sunrise over a sea of clouds, trails through ancient cypress forest, and high-mountain oolong grown on the slopes around you. About 4–5 hours from Taipei</p>
             <p><a href="https://maps.app.goo.gl/HVfnFbhQZD22zJc56" target="_blank">Taroko National Park (太魯閣國家公園)</a> - A towering marble gorge carved by a turquoise river, reopening in stages after the 2024 earthquake and still breathtaking. About 2.5–3 hours from Taipei. Still recovering from the 2024 earthquake, so check what's open before you go</p>
+            <p><a href="https://maps.app.goo.gl/uE6Tzb9u1hHQPnqK9" target="_blank">Kenting National Park (墾丁國家公園)</a> - A tropical oceanfront with year-round warm sunshine, brilliant white-sand beaches, uplifted coral tablelands, and limestone caves</p>
+
 
         </section>
         <section class="content-section section-four-content" data-section-index="3">
@@ -880,7 +898,10 @@
             modelLoader.classList.add('is-done');
             // Taken out of the document after the fade rather than left invisible,
             // so nothing keeps animating over the canvas for the rest of the visit.
-            window.setTimeout(() => modelLoader.remove(), 400);
+            window.setTimeout(() => {
+                modelLoader.remove();
+                document.documentElement.classList.remove('model-loading');
+            }, 400);
         }
 
         // The frame rate collapses over ~20 swipes but a reload restores it, which
