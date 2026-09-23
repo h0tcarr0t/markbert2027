@@ -59,9 +59,7 @@
         #model-loader .spinner-anchor {
             position: absolute;
             top: 50%;
-            /* Centred on the part of the screen the model will occupy, which is
-               everything left of the content column, rather than on the page. */
-            left: 31vw;
+            left: 50%;
             transform: translate(-50%, -50%);
         }
 
@@ -393,12 +391,6 @@
 
             #desktop-rotate-tip {
                 display: none;
-            }
-
-            /* No content column to sit beside here, so it goes to the middle of
-               the screen. */
-            #model-loader .spinner-anchor {
-                left: 50%;
             }
 
             /* Taken out of painting once the content has covered it, so the
