@@ -43,12 +43,10 @@
 
         #model-loader {
             position: fixed;
-            top: 50%;
-            /* Centred on the part of the screen the model will occupy, which is
-               everything left of the content column, rather than on the page. */
-            left: 31vw;
-            transform: translate(-50%, -50%);
+            inset: 0;
             z-index: 5;
+            /* Same tone as section 1 behind the model, so the handoff reads cleanly. */
+            background: rgb(25, 0, 30);
             /* Never in the way of a click aimed at the canvas behind it. */
             pointer-events: none;
             transition: opacity 400ms ease;
@@ -56,6 +54,15 @@
 
         #model-loader.is-done {
             opacity: 0;
+        }
+
+        #model-loader .spinner-anchor {
+            position: absolute;
+            top: 50%;
+            /* Centred on the part of the screen the model will occupy, which is
+               everything left of the content column, rather than on the page. */
+            left: 31vw;
+            transform: translate(-50%, -50%);
         }
 
         #model-loader .spinner {
@@ -390,7 +397,7 @@
 
             /* No content column to sit beside here, so it goes to the middle of
                the screen. */
-            #model-loader {
+            #model-loader .spinner-anchor {
                 left: 50%;
             }
 
@@ -618,7 +625,9 @@
     <!-- Stands in for the model while the scene downloads, then fades and is
          removed. Sits where the model will appear rather than mid-page. -->
     <div id="model-loader" role="status" aria-label="Loading 3D scene">
-        <div class="spinner" aria-hidden="true"></div>
+        <div class="spinner-anchor" aria-hidden="true">
+            <div class="spinner"></div>
+        </div>
     </div>
     <p id="desktop-rotate-tip">click to rotate</p>
     <!-- Holds the model view open on mobile until the reader scrolls past it. -->
@@ -932,13 +941,18 @@
             if (!modelLoader) {
                 return;
             }
-            modelLoader.classList.add('is-done');
-            // Taken out of the document after the fade rather than left invisible,
-            // so nothing keeps animating over the canvas for the rest of the visit.
+            const holdMsAfterLoad = 300;
+            const fadeMs = 400;
+            // Hold briefly after load to mask the first-frame distortion, then fade.
             window.setTimeout(() => {
-                modelLoader.remove();
-                document.documentElement.classList.remove('model-loading');
-            }, 400);
+                modelLoader.classList.add('is-done');
+                // Taken out of the document after the fade rather than left invisible,
+                // so nothing keeps animating over the canvas for the rest of the visit.
+                window.setTimeout(() => {
+                    modelLoader.remove();
+                    document.documentElement.classList.remove('model-loading');
+                }, fadeMs);
+            }, holdMsAfterLoad);
         }
 
         // The frame rate collapses over ~20 swipes but a reload restores it, which
