@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>M&R 2027</title>
+    <link rel="icon" href="favicon.png" type="image/png">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Squada+One&family=IBM+Plex+Sans+JP:wght@700&family=Raleway:wght@300;400&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Left Column: Fixed Spline Model -->
+    <div class="left-column">
+        <spline-viewer id="spline-viewer"></spline-viewer>
+    </div>
+
+    <!-- Load correct Spline model based on device (before spline-viewer.js loads) -->
+    <script>
+        (function() {
+            const desktopUrl = 'https://prod.spline.design/lOX2x8duNf5OfECq/scene.splinecode';
+            const mobileUrl = 'https://prod.spline.design/g2JzIkEz6703ZuSR/scene.splinecode';
+            const isMobile = window.innerWidth <= 768;
+            
+            document.getElementById('spline-viewer').setAttribute('url', isMobile ? mobileUrl : desktopUrl);
+        })();
+    </script>
+
+    <!-- Right Column: Scrollable Content -->
+    <div class="right-column">
+        <div class="section section-1">
+            <h1>SAVE THE DATE</h1>
+            <h2>Because Mark & Rob are getting married!</h2>
+        </div>
+        <div class="section section-2">
+            <h1>01.02.2027</h1>
+            <h2>at the</h2>
+            <h1 class="no-dot"><a href="https://landezine-award.com/the-brick-yard-33-13/" target="_blank">BRICK YARD 33</a></h1>
+            <h1 class="no-dot chinese-text"><a href="https://landezine-award.com/the-brick-yard-33-13/" target="_blank">美軍俱樂部</a></h1>
+            <h2>Taipei, Taiwan</h2>
+        </div>
+        <div class="section section-3">
+            <h1>RSVP</h1>
+            <h2>Please RSVP for yourself only. We can't wait to celebrate with you!</h2>
+            <div id="rsvp-widget"></div>
+        </div>
+        <div class="section section-4">
+            <h1>FLIGHTS & HOTELS</h1>
+            <p>As this is a destination wedding in Taiwan during new years, we suggest booking your hotel and flights early. 
+                Below are some recommendations. (You can also book an <a href="https://www.airbnb.com/a/stays/Taipei--Taiwan" target="_blank">Airbnb</a>)</p>
+            
+            <div class="two-column">
+                <div class="column">
+                    <h2>Flights</h2>
+                    <ul>
+                        <li><a href="https://www.evaair.com" target="_blank">EVA Air</a></li>
+                        <li><a href="https://www.china-airlines.com" target="_blank">China Airlines</a></li>
+                        <li><a href="https://www.starlux-airlines.com/en-US" target="_blank">STARLUX Airlines</a></li>
+                        <li><a href="https://www.united.com" target="_blank">United Airlines</a></li>
+                        <li><a href="https://www.delta.com" target="_blank">Delta Airlines</a></li>
+                    </ul>
+                </div>
+                <div class="column">
+                    <h2>Hotels</h2>
+                    <ul>
+                        <li><a href="https://www.marriott.com/en-us/hotels/tpewh-w-taipei/overview/" target="_blank">W Taipei</a></li>
+                        <li><a href="https://www.marriott.com/en-us/hotels/tpedm-le-meridien-taipei/overview/" target="_blank">Le Méridien Taipei</a></li>
+                        <li><a href="https://capellahotels.com/en/capella-taipei" target="_blank">Capella Taipei</a></li>
+                        <li><a href="https://www.marriott.com/en-us/hotels/tpetm-taipei-marriott-hotel/overview/" target="_blank">Marriott Taipei </a></li>
+                        <li><a href="https://www.mandarinoriental.com/en/taipei/songshan" target="_blank">Mandarin Oriental</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="section section-5">
+            <h1>FAQ</h1>
+            <h2>Can I bring a plus-one?</h2>
+            <p>To keep the celebration intimate and personal, we’re only able to invite the guests in the guestlist. If your plus-one is invited, a separate invitation is sent to them.</p>
+            <h2>Can I bring children?</h2>
+            <p>While we love your little ones, attendance at the wedding will be adults-only, with the exception of children of family members. We truly appreciate your understanding.</p>
+            <h2>Can dietary restrictions be accommodated?</h2>
+            <p>Per venue and catering guidelines, we may have limited ability to accommodate specific dietary restrictions. However, there will be a vegetarian option available. Please indicate your meal preference in the RSVP.</p>
+            <h2>Is there a gift registry?</h2>
+            <p>Instead of a gift registry, we invite guests to participate in the Taiwanese tradition of <a href="https://en.wikipedia.org/wiki/Red_envelope" target="_blank">Red Envelopes (紅包).</a> Your presence truly means the most, and any contribution is warmly appreciated.</p>
+            <h2>What’s the wedding schedule?</h2>
+            <p>While the full wedding schedule will be revealed closer to the wedding date, we strongly encourage guests to arrive in Taipei in time for New Year’s Eve — it’s an iconic place to ring in the New Year, and we’re planning to organize something special so we can kick off the weekend together.</p>
+        </div>
+        <div class="section section-6">
+            <h2>Do I need a visa to enter Taiwan?</h2>
+            <p>It depends on your passport. Most guests (USA, Canadian, EU, UK, and Australian passports) can enter Taiwan visa-free for up to 90 days. Some nationalities do need to apply for a visa in advance, so it’s best to double-check <a href="https://www.boca.gov.tw/cp-149-4486-7785a-2.html" target="_blank">this website</a> before booking flights.</p>
+            <h2>How do I get to the city from the airport (and back)?</h2>
+            <p>We highly recommend taking the <a href="https://www.travel.taipei/en/information/taoyuanmetro" target="_blank">Taoyuan Airport MRT.</a> It’s a high speed transit that takes you directly from the Airport to Taipei Main Station within 40 minutes, and costs about $5 USD. Alternatively there are also Taxis and Ubers you can take.</p>
+            <h2>How do I get to the venue?</h2>
+            <p>There are limited parking spaces at the venue. We will provide more details on transportation closer to the wedding date.</p>
+            <h2>Is English widely spoken?</h2>
+            <p>Yes! Hotels, restaurants, and MRT stations offer bilingual signage. Locals are friendly, and with Uber, Google Maps, and English menus in many places, navigating the city is easy.</p>
+            <h2>A note for members of the Hickner family</h2>
+            <p>For members of the Hickner family who can’t make the trip to Taiwan, we’re planning to host a casual gathering in Michigan at a later date so we can spend time together and mark the occasion.</p>
+        </div>
+    </div>
+
+    <!-- Spline Viewer Script -->
+    <script type="module" src="https://unpkg.com/@splinetool/viewer@1.12.18/build/spline-viewer.js"></script>
+
+    <!-- Forward scroll events from left column to right column (custom smooth scroll) -->
+    <script>
+        const leftColumn = document.querySelector('.left-column');
+        const rightColumn = document.querySelector('.right-column');
+
+        let isScrolling = false;
+        let targetScroll = 0;
+
+        // Custom smooth scroll with adjustable settings
+        const scrollSettings = {
+            speed: 0.08,      // How fast it catches up (0.01 = very slow, 0.2 = fast)
+            multiplier: 1     // How much to scroll per wheel tick
+        };
+
+        function smoothScroll() {
+            if (!isScrolling) return;
+
+            const currentScroll = rightColumn.scrollTop;
+            const diff = targetScroll - currentScroll;
+
+            // Stop if we're close enough
+            if (Math.abs(diff) < 0.5) {
+                rightColumn.scrollTop = targetScroll;
+                isScrolling = false;
+                return;
+            }
+
+            // Ease toward target
+            rightColumn.scrollTop += diff * scrollSettings.speed;
+            requestAnimationFrame(smoothScroll);
+        }
+
+        // Left column scroll - use custom smooth scroll
+        leftColumn.addEventListener('wheel', (e) => {
+            e.preventDefault();
+
+            // Update target scroll position
+            targetScroll = Math.max(
+                0,
+                Math.min(
+                    rightColumn.scrollHeight - rightColumn.clientHeight,
+                    targetScroll + (e.deltaY * scrollSettings.multiplier)
+                )
+            );
+
+            // Start animation if not already running
+            if (!isScrolling) {
+                isScrolling = true;
+                targetScroll = rightColumn.scrollTop + (e.deltaY * scrollSettings.multiplier);
+                smoothScroll();
+            }
+        }, { passive: false });
+
+        // Right column scroll - sync target to prevent bounce back
+        rightColumn.addEventListener('wheel', () => {
+            // Stop any ongoing animation and sync target to current position
+            isScrolling = false;
+            targetScroll = rightColumn.scrollTop;
+        });
+
+        // Also sync on direct scroll (touch, scrollbar drag, etc.)
+        rightColumn.addEventListener('scroll', () => {
+            if (!isScrolling) {
+                targetScroll = rightColumn.scrollTop;
+            }
+        });
+    </script>
+<script>
+    (function (w, d, s, o, f, js, fjs) {
+      w[o] = w[o] || function () { (w[o].q = w[o].q || []).push(arguments) };
+      js = d.createElement(s), fjs = d.getElementsByTagName(s)[0];
+      js.id = o; js.src = f; js.async = 1; fjs.parentNode.insertBefore(js, fjs);
+    }(window, document, 'script', 'oursvp', 'https://www.oursvp.app/widget/widget.js'));
+    oursvp('init', { 
+      element: document.getElementById('rsvp-widget'),
+      eventId: '7ve6uq43AknI0wLathOd',
+      showBackBtn: true,
+      language: 'english'
+    }); 
+    // rsvp styling 
+    document.body.style.setProperty('--bg-color', '#439eff');
+    document.body.style.setProperty('--border-color', '#439eff');
+    document.body.style.setProperty('--button-bg-color', '#b3daff');
+    document.body.style.setProperty('--heading-color', '#ffffff');
+    document.body.style.setProperty('--text-color', '#ffffff');
+    document.body.style.setProperty('--accent-color', '#0062cc');
+    document.body.style.setProperty('--button-text-color', '#000000');
+  </script>
+</body>
+</html>
