@@ -63,6 +63,27 @@
             to { transform: rotate(360deg); }
         }
 
+        #desktop-rotate-tip {
+            position: fixed;
+            left: 24px;
+            bottom: 24px;
+            z-index: 2;
+            margin: 0;
+            font-family: 'Raleway', sans-serif;
+            font-weight: 300;
+            font-size: 1.1rem;
+            line-height: 1.4;
+            color: #ffffff;
+            opacity: 0.8;
+            pointer-events: none;
+        }
+
+        /* Loader should be the only thing visible while scene is booting. */
+        html.model-loading #desktop-rotate-tip {
+            opacity: 0;
+            visibility: hidden;
+        }
+
         #content {
             position: fixed;
             top: 0;
@@ -355,6 +376,10 @@
                 touch-action: pan-y;
             }
 
+            #desktop-rotate-tip {
+                display: none;
+            }
+
             /* No content column to sit beside here, so it goes to the middle of
                the screen. */
             #model-loader {
@@ -570,7 +595,7 @@
                    than the strip alone used to. */
                 line-height: 1.2;
                 color: #FFFFFF;
-                opacity: 0.5;
+                opacity: 0.8;
             }
 
             /* Mobile: the spinner is the only active cue during load. */
@@ -587,6 +612,7 @@
     <div id="model-loader" role="status" aria-label="Loading 3D scene">
         <div class="spinner" aria-hidden="true"></div>
     </div>
+    <p id="desktop-rotate-tip">click on the model to rotate it</p>
     <!-- Holds the model view open on mobile until the reader scrolls past it. -->
     <div id="model-spacer" aria-hidden="true"></div>
     <main id="content">
@@ -724,7 +750,7 @@
     <div id="peek">
         <div class="peek-fill" aria-hidden="true"></div>
         <div class="peek-fill" aria-hidden="true"></div>
-        <p id="swipe-hint">swipe &#8592; &#8594; for sections, &#8593;&#8595; for details</p>
+        <p id="swipe-hint">swipe &#8592; &#8594; to rotate, &#8593;&#8595; for details</p>
     </div>
     <!-- Sits entirely off the bottom of the screen, under Safari's address bar. -->
     <div id="chrome-shade" aria-hidden="true"></div>
@@ -834,6 +860,9 @@
         // above the sideways threshold, so the model view stays a rotation surface
         // and only a decided gesture leaves it.
         const CONTENT_OPEN_SWIPE_PX = 48;
+        // Finger travel still treated as a tap on release. This keeps a slow swipe
+        // from being misread as a tap while allowing small touch jitter.
+        const MOBILE_TAP_MAX_DRIFT_PX = 14;
         // How far one axis must beat the other before a drag is called sideways or
         // upward. Without it a diagonal satisfies whichever test is read first.
         const SWIPE_AXIS_BIAS = 1.3;
@@ -1618,6 +1647,21 @@
                 // Still checked on release, to catch a gesture slow enough that no
                 // single move crossed a threshold.
                 tryHandleModelGesture(event);
+
+                // Swipe/up gestures take priority. Tap rotation is only the fallback:
+                // right half = clockwise, left half = counterclockwise, on release.
+                if (!swipeHandled && isMobileViewport() && scrollLocked) {
+                    const driftX = Math.abs(event.clientX - swipeStartX);
+                    const driftY = Math.abs(event.clientY - swipeStartY);
+                    if (driftX <= MOBILE_TAP_MAX_DRIFT_PX && driftY <= MOBILE_TAP_MAX_DRIFT_PX) {
+                        const step = event.clientX < window.innerWidth / 2
+                            ? ROTATION_STEP_LEFT
+                            : ROTATION_STEP_RIGHT;
+                        const direction = step < 0 ? 'clockwise' : 'counterclockwise';
+                        runStepRotation(step, direction);
+                    }
+                }
+
                 swipeTracking = false;
                 swipeHandled = false;
             }, { capture: true });
