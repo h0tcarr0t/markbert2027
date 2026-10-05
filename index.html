@@ -621,7 +621,7 @@
             <div class="spinner"></div>
         </div>
     </div>
-    <p id="desktop-rotate-tip">click to rotate</p>
+    <p id="desktop-rotate-tip">click to rotate 點擊旋轉</p>
     <!-- Holds the model view open on mobile until the reader scrolls past it. -->
     <div id="model-spacer" aria-hidden="true"></div>
     <main id="content">
@@ -630,8 +630,9 @@
             <h2>at the</h2>
             <h1 class="no-dot"><a href="https://landezine-award.com/the-brick-yard-33-13/" target="_blank">BRICK YARD 33</a></h1>
             <h1 class="no-dot chinese-text"><a href="https://landezine-award.com/the-brick-yard-33-13/" target="_blank">美軍俱樂部</a></h1>
-            <h2>Taipei, Taiwan</h2>
-            <h2 class="rsvp-note"><em>Please RSVP below if you have not already</em></h2>
+            <h2>----------------------------------------</h2>
+            <h2 class="rsvp-note">Please RSVP below if you have not already</h2>
+            <h2 class="rsvp-note">請在下方輸入您的姓名，並點選「Find your invite!」按鈕以回覆出席。</h2>
             <div id="rsvp-widget"></div>
         </section>
         <section class="content-section section-two-content" data-section-index="1">
@@ -791,7 +792,16 @@
         const SECTION_COUNT = 4;
         const ROTATION_DURATION = 1000;
         const TARGET_NAME = 'Origin';
-        const SECTION_OBJECT_NAMES = ['Section1', 'Section2', 'Section3', 'Section4'];
+        // One entry per content section, listing every scene object that belongs
+        // to it. Names in the same entry scale in and out together. Section0 is
+        // only in the desktop export, so on mobile that lookup simply finds
+        // nothing and the rest carries on.
+        const SECTION_OBJECT_NAMES = [
+            ['Section1', 'Section0'],
+            ['Section2'],
+            ['Section3'],
+            ['Section4']
+        ];
         // Desktop hides inactive section text by scaling it away; mobile leaves
         // every section object at full scale permanently.
         const ACTIVE_SECTION_SCALE = 1;
@@ -1165,7 +1175,9 @@
             const baseY = target.rotation.y;
             const content = document.getElementById('content');
             const sections = Array.from(content.querySelectorAll('[data-section-index]'));
-            const sectionObjects = SECTION_OBJECT_NAMES.map((name) => spline.get(name));
+            const sectionObjects = SECTION_OBJECT_NAMES.map((names) =>
+                names.map((name) => spline.get(name)).filter(Boolean)
+            );
             const peek = document.getElementById('peek');
             const shade = document.getElementById('chrome-shade');
             const spacer = document.getElementById('model-spacer');
@@ -1217,14 +1229,16 @@
             }
 
             function applySectionObjectScales(scales) {
-                sectionObjects.forEach((object, index) => {
-                    if (!object || !object.scale) {
-                        return;
-                    }
+                sectionObjects.forEach((objects, index) => {
                     const value = scales[index];
-                    object.scale.x = value;
-                    object.scale.y = value;
-                    object.scale.z = value;
+                    objects.forEach((object) => {
+                        if (!object.scale) {
+                            return;
+                        }
+                        object.scale.x = value;
+                        object.scale.y = value;
+                        object.scale.z = value;
+                    });
                 });
             }
 
