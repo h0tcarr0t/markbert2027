@@ -178,6 +178,21 @@
             line-height: 1;
         }
 
+        /* Replaces a typed row of dashes, which could only ever approximate the
+           column width. Runs 90% of the section, so it tracks whatever that
+           section is capped at rather than needing to be re-counted.
+           Browsers' own stylesheets put a grey on hr, which currentColor would
+           otherwise pick up, hence inheriting the section's text colour. */
+        #content .section-divider {
+            color: inherit;
+            width: 90%;
+            height: 0;
+            border: 0;
+            border-top: 1px solid currentColor;
+            margin-top: 1.2rem;
+            margin-bottom: 1.8rem;
+        }
+
         .content-section.is-animating {
             transition: opacity var(--section-duration) cubic-bezier(0.215, 0.61, 0.355, 1), transform var(--section-duration) cubic-bezier(0.215, 0.61, 0.355, 1);
         }
@@ -346,6 +361,28 @@
         #rsvp-widget select {
             color: #000000 !important;
             -webkit-text-fill-color: #000000 !important;
+        }
+
+        /* Desktop: the first section wraps at the RSVP widget's right edge. The
+           widget lays out at --rsvp-layout-width, then paints at 0.9 scale from
+           its own left edge and sits 15px further left again, so its right edge
+           lands at 0.9 of that width, less those 15px. The section is capped
+           there, plus its own padding.
+
+           That width is measured off the column rather than off the section,
+           because the widget is a child of the section: reading the section
+           would mean the cap shrank the widget, which would shrink the cap. */
+        @media (min-width: 769px) {
+            .wedding-details {
+                --rsvp-layout-width: min(500px, 38vw - 4rem);
+
+                max-width: calc(0.9 * var(--rsvp-layout-width) - 15px + 4rem);
+            }
+
+            #rsvp-widget {
+                width: var(--rsvp-layout-width);
+                max-width: none;
+            }
         }
 
         #model-spacer,
@@ -630,9 +667,9 @@
             <h2>at the</h2>
             <h1 class="no-dot"><a href="https://landezine-award.com/the-brick-yard-33-13/" target="_blank">BRICK YARD 33</a></h1>
             <h1 class="no-dot chinese-text"><a href="https://landezine-award.com/the-brick-yard-33-13/" target="_blank">美軍俱樂部</a></h1>
-            <h2>----------------------------------------</h2>
+            <hr class="section-divider">
             <h2 class="rsvp-note">Please RSVP below if you have not already</h2>
-            <h2 class="rsvp-note">請在下方輸入您的姓名，並點選「Find your invite!」按鈕以回覆出席。</h2>
+            <h2 class="rsvp-note">請在下方輸入您的姓名，並點選「Find your invite!」按鈕以回覆出席</h2>
             <div id="rsvp-widget"></div>
         </section>
         <section class="content-section section-two-content" data-section-index="1">
@@ -673,7 +710,7 @@
             <p>Here's the official schedule for our wedding weekend. We can’t wait to celebrate these special moments together with everyone!</p>
             <p class="blank-line">&nbsp;</p>
             <h1>FRI 01.01.2027</h1>
-            <h2>Family Welcome Dinner</h2>
+            <h2>Rehearsal Dinner</h2>
             <p>6:00 PM · <a href="https://maps.app.goo.gl/YkF1LYmpqdKs85Xv6" target="_blank">Mountain and Sea House · 山海樓</a></p>
             <p>We invite our families and wedding party to gather together for an intimate dinner on the eve of the wedding</p>
             <p class="blank-line">&nbsp;</p>
