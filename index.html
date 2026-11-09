@@ -363,6 +363,32 @@
             -webkit-text-fill-color: #000000 !important;
         }
 
+        /* Made to read as one more of the widget's own buttons. The widget is
+           painted at 0.9 scale, so its text and padding land smaller than the
+           values written for it; --guide-scale reproduces that on a button that
+           is not inside the widget and so is not scaled with it.
+           --guide-gap also absorbs the dead space the widget leaves below
+           itself, its layout height being unscaled. */
+        #content .guide-button {
+            --guide-scale: 0.9;
+            --guide-font: 1.2rem;
+            --guide-gap: 0.5rem;
+
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4em;
+            margin-top: var(--guide-gap);
+            padding: calc(0.6rem * var(--guide-scale)) calc(1.25rem * var(--guide-scale));
+            border: 2px solid #FFF8A8;
+            border-radius: calc(6px * var(--guide-scale));
+            background: var(--rsvp-cta-color, #2e6bff);
+            color: #FFF8A8;
+            font-family: 'Raleway', sans-serif;
+            font-size: calc(var(--guide-font) * var(--guide-scale));
+            font-weight: 700;
+            line-height: 1.5;
+        }
+
         /* Desktop: the first section wraps at the RSVP widget's right edge. The
            widget lays out at --rsvp-layout-width, then paints at 0.9 scale from
            its own left edge and sits 15px further left again, so its right edge
@@ -550,6 +576,14 @@
                 transform: none;
             }
 
+            /* The widget is unscaled here, so the button matches it at full size
+               and against the mobile type scale. */
+            #content .guide-button {
+                --guide-scale: 1;
+                --guide-font: var(--m-p);
+                --guide-gap: 1.5rem;
+            }
+
             #rsvp-widget,
             #rsvp-widget * {
                 font-size: var(--m-p) !important;
@@ -672,6 +706,7 @@
             <h2 class="rsvp-note">Please RSVP below if you have not already</h2>
             <h2 class="rsvp-note">請在下方輸入您的姓名，並點選「Find your invite!」按鈕以回覆出席</h2>
             <div id="rsvp-widget"></div>
+            <a class="guide-button" href="https://markrob-wedding-guide.netlify.app/" target="_blank">Wedding Party Guide<span aria-hidden="true">&#8599;</span></a>
         </section>
         <section class="content-section section-two-content" data-section-index="1">
             <h1>DRESS CODE</h1>
@@ -727,7 +762,7 @@
             <p class="blank-line">&nbsp;</p>
             <h1>SUN 01.03.2027</h1>
             <h2>Farewell Luncheon</h2>
-            <p>01:00 PM · <a href="https://maps.app.goo.gl/nXFPi8hRmKdAYywXA" target="_blank">Plum Blossom Room · 梅花廳</a></p>
+            <p>12:30 PM · <a href="https://maps.app.goo.gl/nXFPi8hRmKdAYywXA" target="_blank">Plum Blossom Room · 梅花廳</a></p>
             <p>Please join us for a casual dim sum lunch the day after. We’ll gather around the tables for tea and shared dishes before saying goodbye</p>
             <p class="blank-line">&nbsp;</p>
             <h1>A WEEK IN TAIPEI</h1>
@@ -1410,10 +1445,14 @@
                 };
             }
 
-            // Scoped to the widget rather than <body>: a custom property on body is
+            // Scoped to the section rather than <body>: a custom property on body is
             // inherited document-wide, so rewriting it every animation frame forces a
-            // style invalidation across the whole page. Only the widget reads these.
-            const rsvpVariableRoot = document.getElementById('rsvp-widget') || document.body;
+            // style invalidation across the whole page. The section is as tight as
+            // this can go while still reaching both the widget and the guide button
+            // beneath it, which track the same colour.
+            const rsvpVariableRoot = content.querySelector('.wedding-details')
+                || document.getElementById('rsvp-widget')
+                || document.body;
 
             function setRsvpButtonColor(color) {
                 const brighter = brightenColor(color, 0.1);
